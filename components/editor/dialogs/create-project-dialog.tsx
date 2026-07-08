@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input"
 interface CreateProjectDialogProps {
   open: boolean
   name: string
-  slug: string
+  roomId: string
   isSubmitting: boolean
   onOpenChange: (open: boolean) => void
   onNameChange: (name: string) => void
@@ -27,7 +27,7 @@ interface CreateProjectDialogProps {
 export function CreateProjectDialog({
   open,
   name,
-  slug,
+  roomId,
   isSubmitting,
   onOpenChange,
   onNameChange,
@@ -44,7 +44,7 @@ export function CreateProjectDialog({
         <DialogHeader>
           <DialogTitle>Create a project</DialogTitle>
           <DialogDescription>
-            Name your new architecture workspace. Its slug is generated
+            Name your new architecture workspace. Its room ID is generated
             automatically.
           </DialogDescription>
         </DialogHeader>
@@ -65,10 +65,8 @@ export function CreateProjectDialog({
               placeholder="Payments Platform"
             />
             <p className="text-xs text-copy-muted">
-              Slug:{" "}
-              <span className="font-mono text-brand">
-                {slug || "your-project"}
-              </span>
+              Room ID:{" "}
+              <span className="font-mono text-brand">{roomId}</span>
             </p>
           </div>
         </form>

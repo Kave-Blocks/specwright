@@ -1,9 +1,12 @@
 import { EditorShell } from "@/components/editor/editor-shell"
 import { NewProjectButton } from "@/components/editor/new-project-button"
+import { getEditorHomeProjects } from "@/lib/projects-data"
 
-export default function EditorHomePage() {
+export default async function EditorHomePage() {
+  const { ownedProjects, sharedProjects } = await getEditorHomeProjects()
+
   return (
-    <EditorShell>
+    <EditorShell ownedProjects={ownedProjects} sharedProjects={sharedProjects}>
       <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
         <h1 className="font-heading text-2xl font-medium text-copy-primary">
           Create a project or open an existing one

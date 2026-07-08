@@ -9,7 +9,7 @@ export function ProjectDialogs() {
   const {
     dialog,
     name,
-    slug,
+    roomId,
     isSubmitting,
     setName,
     closeDialog,
@@ -27,7 +27,7 @@ export function ProjectDialogs() {
       <CreateProjectDialog
         open={dialog?.type === "create"}
         name={name}
-        slug={slug}
+        roomId={roomId}
         isSubmitting={isSubmitting}
         onOpenChange={handleOpenChange}
         onNameChange={setName}

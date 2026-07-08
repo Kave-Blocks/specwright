@@ -26,6 +26,8 @@
 - Use CSS custom property tokens defined in `globals.css` — no raw Tailwind color classes like `zinc-*` or hardcoded hex values.
 - Reference tokens through their Tailwind utility names: `bg-base`, `text-copy-primary`, `border-surface-border`, `text-brand`, etc.
 - Maintain the border radius scale: `rounded-xl` for small elements, `rounded-2xl` for cards, `rounded-3xl` for modals.
+- Prefer spacing-scale utilities over arbitrary values when an equivalent exists — `top-17`, not `top-[4.25rem]`. Reserve `[...]` arbitrary values for genuinely off-scale needs (`calc()`, viewport math).
+- Never hardcode a value derived from another component's dimensions (e.g. offsetting the sidebar by the navbar height). Promote the shared dimension to a layout token in `globals.css` and reference it via `var(--token)` so a single change stays consistent.
 
 ## API Routes
 

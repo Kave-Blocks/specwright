@@ -100,6 +100,16 @@ shadcn/ui on top of Tailwind. No custom design system. Components live in `compo
 - Modals and dialogs: centered overlay, `rounded-3xl`, dark background with backdrop blur.
 - Navbar: top bar with dark background and bottom border.
 
+### Layout Tokens
+
+Shared chrome dimensions live as CSS custom properties in `globals.css` so dependent layout math stays in one place.
+
+| Role                | CSS Variable             | Value    |
+| ------------------- | ------------------------ | -------- |
+| Editor navbar height | `--editor-navbar-height` | `3.5rem` |
+
+Anything positioned relative to the navbar (the floating sidebar's top offset and height) derives from `--editor-navbar-height` rather than hardcoding the resulting number.
+
 ## Icons
 
 Lucide React. Stroke-based icons only — no filled variants. Icon sizes: `h-4 w-4` for inline, `h-5 w-5` for buttons, `h-8 w-8` for feature icons in empty states.

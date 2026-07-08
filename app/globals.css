@@ -95,6 +95,12 @@
     --state-success: #34d399;
     --state-warning: #fbbf24;
 
+    /* layout tokens — single source of truth for shared chrome dimensions.
+     * The editor navbar is fixed at h-14; anything positioned relative to it
+     * (the floating sidebar's top offset / height) must derive from this var
+     * rather than hardcoding the resulting value. */
+    --editor-navbar-height: 3.5rem;
+
     /* shadcn semantic tokens mapped onto the dark theme */
     --background: var(--bg-base);
     --foreground: var(--text-primary);

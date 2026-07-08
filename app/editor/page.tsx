@@ -1,7 +1,5 @@
-import { Plus } from "lucide-react"
-
 import { EditorShell } from "@/components/editor/editor-shell"
-import { Button } from "@/components/ui/button"
+import { NewProjectButton } from "@/components/editor/new-project-button"
 
 export default function EditorHomePage() {
   return (
@@ -14,10 +12,7 @@ export default function EditorHomePage() {
           Start a new architecture workspace, or choose a project from the
           sidebar.
         </p>
-        <Button>
-          <Plus className="h-4 w-4" />
-          New Project
-        </Button>
+        <NewProjectButton />
       </div>
     </EditorShell>
   )

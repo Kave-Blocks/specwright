@@ -53,23 +53,29 @@ export function EditorWorkspace({
           )}
         />
 
-        <ProjectSidebar
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
-        />
-        <AiSidebar
-          isOpen={isAiSidebarOpen}
-          onClose={() => setIsAiSidebarOpen(false)}
-        />
+        {/* Docked workspace row: sidebar · canvas · AI panel. On desktop the
+         * panels are in-flow columns so the canvas fills the remaining space;
+         * on mobile they collapse to slide-over overlays. */}
+        <div className="flex flex-1 overflow-hidden p-3 pt-[calc(var(--editor-navbar-height)+0.75rem)]">
+          <ProjectSidebar
+            docked
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
+          />
 
-        <main className="flex flex-1 pt-14">
-          <div className="flex flex-1 flex-col items-center justify-center gap-2 bg-base text-center">
+          <main className="flex flex-1 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-surface-border bg-base text-center">
             <p className="text-sm text-copy-muted">Canvas coming soon</p>
             <p className="text-xs text-copy-faint">
               The real-time collaborative canvas will render here.
             </p>
-          </div>
-        </main>
+          </main>
+
+          <AiSidebar
+            docked
+            isOpen={isAiSidebarOpen}
+            onClose={() => setIsAiSidebarOpen(false)}
+          />
+        </div>
       </div>
 
       <ProjectDialogs />

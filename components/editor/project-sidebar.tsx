@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Pencil, Plus, Trash2, X } from "lucide-react"
 
 import { useProjectActionsContext } from "@/components/editor/project-actions-context"
@@ -12,9 +13,20 @@ import { cn } from "@/lib/utils"
 interface ProjectSidebarProps {
   isOpen: boolean
   onClose: () => void
+  /**
+   * When true, the panel docks as an in-flow column on desktop (pushing the
+   * canvas to the remaining space) while staying a slide-over overlay on
+   * mobile. Defaults to the pure floating-overlay treatment used by the
+   * `/editor` home shell.
+   */
+  docked?: boolean
 }
 
-export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
+export function ProjectSidebar({
+  isOpen,
+  onClose,
+  docked = false,
+}: ProjectSidebarProps) {
   const {
     ownedProjects,
     sharedProjects,
@@ -28,10 +40,19 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
     <aside
       aria-hidden={!isOpen}
       className={cn(
-        "fixed left-3 z-30 flex w-80 flex-col rounded-2xl border border-surface-border bg-surface/95 shadow-2xl backdrop-blur-sm transition-transform duration-200 ease-out top-[calc(var(--editor-navbar-height)+0.75rem)] h-[calc(100vh-var(--editor-navbar-height)-1.5rem)]",
+        // Card visuals shared by both variants.
+        "z-30 flex w-80 flex-col rounded-2xl border border-surface-border bg-surface/95 shadow-2xl backdrop-blur-sm",
+        // Mobile overlay positioning (base) — docked mode overrides at md+.
+        "fixed left-3 top-[calc(var(--editor-navbar-height)+0.75rem)] h-[calc(100vh-var(--editor-navbar-height)-1.5rem)]",
+        docked
+          ? "transition-[transform,margin,opacity] duration-200 ease-out md:relative md:left-auto md:top-auto md:z-auto md:h-auto md:shrink-0"
+          : "transition-transform duration-200 ease-out",
         isOpen
-          ? "translate-x-0"
-          : "-translate-x-[calc(100%+1rem)] pointer-events-none"
+          ? cn("translate-x-0", docked && "md:mr-3")
+          : cn(
+              "-translate-x-[calc(100%+1rem)] pointer-events-none",
+              docked && "md:-mr-80 md:translate-x-0 md:opacity-0"
+            )
       )}
     >
       <div className="flex items-center justify-between border-b border-surface-border px-4 py-3">
@@ -136,7 +157,10 @@ function ProjectItem({
         isActive ? "bg-accent-dim" : "hover:bg-elevated"
       )}
     >
-      <div className="min-w-0 flex-1">
+      <Link
+        href={`/editor/${project.slug}`}
+        className="min-w-0 flex-1 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+      >
         <p
           className={cn(
             "truncate text-sm",
@@ -148,7 +172,7 @@ function ProjectItem({
         <p className="truncate font-mono text-xs text-copy-muted">
           {project.slug}
         </p>
-      </div>
+      </Link>
 
       {showActions && (
         <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">

@@ -8,22 +8,36 @@ import { cn } from "@/lib/utils"
 interface AiSidebarProps {
   isOpen: boolean
   onClose: () => void
+  /**
+   * When true, the panel docks as an in-flow column on desktop (sharing the
+   * row with the canvas) while staying a slide-over overlay on mobile.
+   */
+  docked?: boolean
 }
 
 /**
  * Right-hand slide-over placeholder for the future AI chat panel. Mirrors the
- * floating overlay treatment of the left `ProjectSidebar` and holds no real
- * chat logic yet.
+ * docking treatment of the left `ProjectSidebar` and holds no real chat logic
+ * yet.
  */
-export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
+export function AiSidebar({ isOpen, onClose, docked = false }: AiSidebarProps) {
   return (
     <aside
       aria-hidden={!isOpen}
       className={cn(
-        "fixed right-3 z-30 flex w-80 flex-col rounded-2xl border border-surface-border bg-surface/95 shadow-2xl backdrop-blur-sm transition-transform duration-200 ease-out top-[calc(var(--editor-navbar-height)+0.75rem)] h-[calc(100vh-var(--editor-navbar-height)-1.5rem)]",
+        // Card visuals shared by both variants.
+        "z-30 flex w-80 flex-col rounded-2xl border border-surface-border bg-surface/95 shadow-2xl backdrop-blur-sm",
+        // Mobile overlay positioning (base) — docked mode overrides at md+.
+        "fixed right-3 top-[calc(var(--editor-navbar-height)+0.75rem)] h-[calc(100vh-var(--editor-navbar-height)-1.5rem)]",
+        docked
+          ? "transition-[transform,margin,opacity] duration-200 ease-out md:relative md:right-auto md:top-auto md:z-auto md:h-auto md:shrink-0"
+          : "transition-transform duration-200 ease-out",
         isOpen
-          ? "translate-x-0"
-          : "translate-x-[calc(100%+1rem)] pointer-events-none"
+          ? cn("translate-x-0", docked && "md:ml-3")
+          : cn(
+              "translate-x-[calc(100%+1rem)] pointer-events-none",
+              docked && "md:-ml-80 md:translate-x-0 md:opacity-0"
+            )
       )}
     >
       <div className="flex items-center justify-between border-b border-surface-border px-4 py-3">

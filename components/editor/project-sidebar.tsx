@@ -15,8 +15,14 @@ interface ProjectSidebarProps {
 }
 
 export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
-  const { ownedProjects, sharedProjects, openCreate, openRename, openDelete } =
-    useProjectActionsContext()
+  const {
+    ownedProjects,
+    sharedProjects,
+    activeRoomId,
+    openCreate,
+    openRename,
+    openDelete,
+  } = useProjectActionsContext()
 
   return (
     <aside
@@ -67,6 +73,7 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
                   <ProjectItem
                     key={project.id}
                     project={project}
+                    isActive={project.id === activeRoomId}
                     onRename={() => openRename(project)}
                     onDelete={() => openDelete(project)}
                   />
@@ -84,7 +91,11 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
             ) : (
               <ul className="flex flex-col gap-1 py-2">
                 {sharedProjects.map((project) => (
-                  <ProjectItem key={project.id} project={project} />
+                  <ProjectItem
+                    key={project.id}
+                    project={project}
+                    isActive={project.id === activeRoomId}
+                  />
                 ))}
               </ul>
             )}
@@ -104,17 +115,36 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
 
 interface ProjectItemProps {
   project: Project
+  isActive?: boolean
   onRename?: () => void
   onDelete?: () => void
 }
 
-function ProjectItem({ project, onRename, onDelete }: ProjectItemProps) {
+function ProjectItem({
+  project,
+  isActive = false,
+  onRename,
+  onDelete,
+}: ProjectItemProps) {
   const showActions = Boolean(onRename || onDelete)
 
   return (
-    <li className="group flex items-center gap-2 rounded-xl px-2 py-2 transition-colors hover:bg-elevated">
+    <li
+      aria-current={isActive ? "page" : undefined}
+      className={cn(
+        "group flex items-center gap-2 rounded-xl px-2 py-2 transition-colors",
+        isActive ? "bg-accent-dim" : "hover:bg-elevated"
+      )}
+    >
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm text-copy-primary">{project.name}</p>
+        <p
+          className={cn(
+            "truncate text-sm",
+            isActive ? "text-brand" : "text-copy-primary"
+          )}
+        >
+          {project.name}
+        </p>
         <p className="truncate font-mono text-xs text-copy-muted">
           {project.slug}
         </p>

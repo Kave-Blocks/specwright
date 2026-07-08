@@ -14,6 +14,7 @@ type DialogState =
 export interface UseProjectActions {
   ownedProjects: Project[]
   sharedProjects: Project[]
+  activeRoomId: string | null
   dialog: DialogState
   name: string
   roomId: string
@@ -157,6 +158,7 @@ export function useProjectActions({
   return {
     ownedProjects,
     sharedProjects,
+    activeRoomId,
     dialog,
     name,
     roomId,

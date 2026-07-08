@@ -6,13 +6,16 @@ import { AiSidebar } from "@/components/editor/ai-sidebar"
 import { ProjectActionsProvider } from "@/components/editor/project-actions-context"
 import { ProjectDialogs } from "@/components/editor/project-dialogs"
 import { ProjectSidebar } from "@/components/editor/project-sidebar"
+import { ShareDialog } from "@/components/editor/share/share-dialog"
 import { WorkspaceNavbar } from "@/components/editor/workspace-navbar"
 import { useProjectActions } from "@/hooks/use-project-actions"
 import type { Project } from "@/lib/projects"
 import { cn } from "@/lib/utils"
 
 interface EditorWorkspaceProps {
+  projectId: string
   projectName: string
+  isOwner: boolean
   ownedProjects: Project[]
   sharedProjects: Project[]
 }
@@ -24,12 +27,15 @@ interface EditorWorkspaceProps {
  * the layout shell only.
  */
 export function EditorWorkspace({
+  projectId,
   projectName,
+  isOwner,
   ownedProjects,
   sharedProjects,
 }: EditorWorkspaceProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(false)
+  const [isShareOpen, setIsShareOpen] = useState(false)
   const projectActions = useProjectActions({ ownedProjects, sharedProjects })
 
   return (
@@ -41,6 +47,7 @@ export function EditorWorkspace({
           onToggleSidebar={() => setIsSidebarOpen((isOpen) => !isOpen)}
           isAiSidebarOpen={isAiSidebarOpen}
           onToggleAiSidebar={() => setIsAiSidebarOpen((isOpen) => !isOpen)}
+          onOpenShare={() => setIsShareOpen(true)}
         />
 
         {/* Mobile backdrop scrim — tapping outside the sidebar closes it. */}
@@ -79,6 +86,13 @@ export function EditorWorkspace({
       </div>
 
       <ProjectDialogs />
+
+      <ShareDialog
+        open={isShareOpen}
+        projectId={projectId}
+        isOwner={isOwner}
+        onOpenChange={setIsShareOpen}
+      />
     </ProjectActionsProvider>
   )
 }

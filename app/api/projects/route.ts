@@ -1,6 +1,6 @@
-import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
+import { withAuth } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import {
   DEFAULT_PROJECT_NAME,
@@ -10,29 +10,17 @@ import {
 } from "@/lib/projects-api";
 
 /** List the authenticated user's own projects, newest first. */
-export async function GET() {
-  const { userId } = await auth();
-
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export const GET = withAuth(async (_request, { userId }) => {
   const projects = await prisma.project.findMany({
     where: { ownerId: userId },
     orderBy: { createdAt: "desc" },
   });
 
   return NextResponse.json({ projects });
-}
+});
 
 /** Create a project owned by the authenticated user. */
-export async function POST(request: Request) {
-  const { userId } = await auth();
-
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export const POST = withAuth(async (request, { userId }) => {
   const body = await readJsonBody(request);
   const name = normalizeName(body.name) ?? DEFAULT_PROJECT_NAME;
   const description = normalizeName(body.description);
@@ -60,7 +48,7 @@ export async function POST(request: Request) {
     }
     throw error;
   }
-}
+});
 
 /** Detect Prisma's unique-constraint violation (duplicate project id). */
 function isUniqueConstraintError(error: unknown): boolean {

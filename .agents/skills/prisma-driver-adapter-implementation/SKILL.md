@@ -359,8 +359,15 @@ export class MyAdapterFactory implements SqlMigrationAwareDriverAdapterFactory {
   }
 
   connectToShadowDb(): Promise<SqlDriverAdapter> {
-    const url = this.options?.shadowDatabaseUrl ?? this.config.url;
-    return Promise.resolve(new MyAdapter(openConnection(url)));
+    // Never reuse the primary `url` as the shadow database — migrate/diff
+    // workflows reset the shadow DB and would destroy real data. Fail closed
+    // if a dedicated shadow URL was not provided.
+    if (!this.options?.shadowDatabaseUrl) {
+      throw new Error("shadowDatabaseUrl is required for connectToShadowDb()");
+    }
+    return Promise.resolve(
+      new MyAdapter(openConnection(this.options.shadowDatabaseUrl)),
+    );
   }
 }
 ```

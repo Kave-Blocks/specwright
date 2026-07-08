@@ -16,6 +16,7 @@ interface WorkspaceNavbarProps {
   onToggleSidebar: () => void
   isAiSidebarOpen: boolean
   onToggleAiSidebar: () => void
+  onOpenShare: () => void
 }
 
 export function WorkspaceNavbar({
@@ -24,6 +25,7 @@ export function WorkspaceNavbar({
   onToggleSidebar,
   isAiSidebarOpen,
   onToggleAiSidebar,
+  onOpenShare,
 }: WorkspaceNavbarProps) {
   const SidebarToggleIcon = isSidebarOpen ? PanelLeftClose : PanelLeftOpen
 
@@ -47,7 +49,7 @@ export function WorkspaceNavbar({
       </div>
 
       <div className="flex items-center gap-1 justify-self-end">
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={onOpenShare}>
           <Share2 className="h-4 w-4" />
           Share
         </Button>

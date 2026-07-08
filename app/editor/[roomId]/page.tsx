@@ -26,7 +26,9 @@ export default async function EditorRoomPage({ params }: EditorRoomPageProps) {
 
   return (
     <EditorWorkspace
+      projectId={project.id}
       projectName={project.name}
+      isOwner={project.ownerId === identity.userId}
       ownedProjects={ownedProjects}
       sharedProjects={sharedProjects}
     />

@@ -1,3 +1,5 @@
+import { NextResponse } from "next/server";
+
 import { prisma } from "@/lib/prisma";
 
 /** Fallback name applied when a project is created without one. */
@@ -73,4 +75,12 @@ export async function verifyProjectOwnership(
   }
 
   return { authorized: true };
+}
+
+/** Standard JSON response for a failed ownership check (`403`/`404`). */
+export function ownershipErrorResponse(status: 403 | 404) {
+  return NextResponse.json(
+    { error: status === 403 ? "Forbidden" : "Not found" },
+    { status },
+  );
 }

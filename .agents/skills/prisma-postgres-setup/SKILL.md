@@ -147,9 +147,14 @@ DATABASE_URL="<direct-connection-string>"
 
 5. If `prisma/schema.prisma` does not exist, run `npx prisma init` to scaffold the project. This creates both `prisma/schema.prisma` and `prisma.config.ts`.
 
-6. Ensure `schema.prisma` has the `postgresql` provider and **no** `url` or `directUrl` in the datasource block (Prisma 7 manages connection URLs in `prisma.config.ts`, not in the schema):
+6. Ensure `schema.prisma` declares a `prisma-client` generator with an explicit `output` and has the `postgresql` provider with **no** `url` or `directUrl` in the datasource block (Prisma 7 manages connection URLs in `prisma.config.ts`, not in the schema). The `output` path is required — Prisma 7 does not generate the client unless it is set, and Step 7 imports from it:
 
 ```prisma
+generator client {
+  provider = "prisma-client"
+  output   = "./generated/prisma"
+}
+
 datasource db {
   provider = "postgresql"
 }
@@ -158,13 +163,14 @@ datasource db {
 7. Ensure `prisma.config.ts` loads the connection URL from the environment:
 
 ```typescript
+import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { defineConfig } from 'prisma/config'
 import 'dotenv/config'
 
 export default defineConfig({
   earlyAccess: true,
-  schema: path.join(import.meta.dirname, 'prisma', 'schema.prisma'),
+  schema: path.join(fileURLToPath(new URL('.', import.meta.url)), 'prisma', 'schema.prisma'),
   datasource: {
     url: process.env.DATABASE_URL!,
   },

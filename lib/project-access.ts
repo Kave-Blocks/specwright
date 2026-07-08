@@ -11,6 +11,7 @@ export interface ClerkIdentity {
 export interface AccessibleProject {
   id: string;
   name: string;
+  ownerId: string;
 }
 
 /**
@@ -57,6 +58,6 @@ export async function getAccessibleProject(
           : []),
       ],
     },
-    select: { id: true, name: true },
+    select: { id: true, name: true, ownerId: true },
   });
 }

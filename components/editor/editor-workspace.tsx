@@ -3,6 +3,7 @@
 import { useState } from "react"
 
 import { AiSidebar } from "@/components/editor/ai-sidebar"
+import { CanvasRoom } from "@/components/editor/canvas/canvas-room"
 import { ProjectActionsProvider } from "@/components/editor/project-actions-context"
 import { ProjectDialogs } from "@/components/editor/project-dialogs"
 import { ProjectSidebar } from "@/components/editor/project-sidebar"
@@ -22,9 +23,9 @@ interface EditorWorkspaceProps {
 
 /**
  * Client shell for a single `/editor/[roomId]` room. Owns the open/closed
- * state for both slide-over panels and composes the workspace chrome around a
- * central canvas placeholder. No canvas, Liveblocks, or AI logic yet — this is
- * the layout shell only.
+ * state for both slide-over panels and composes the workspace chrome around
+ * the central `CanvasRoom` (Liveblocks-backed React Flow canvas). The AI panel
+ * is still a placeholder.
  */
 export function EditorWorkspace({
   projectId,
@@ -70,11 +71,8 @@ export function EditorWorkspace({
             onClose={() => setIsSidebarOpen(false)}
           />
 
-          <main className="flex flex-1 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-surface-border bg-base text-center">
-            <p className="text-sm text-copy-muted">Canvas coming soon</p>
-            <p className="text-xs text-copy-faint">
-              The real-time collaborative canvas will render here.
-            </p>
+          <main className="relative flex-1 overflow-hidden bg-base">
+            <CanvasRoom roomId={projectId} />
           </main>
 
           <AiSidebar

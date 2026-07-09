@@ -1,0 +1,31 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - img [ref=e6]
+        - generic [ref=e8]: Ghost AI
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - heading "Design systems at the speed of thought." [level=1] [ref=e11]
+          - paragraph [ref=e12]: Describe your architecture in plain English. Ghost AI maps it to a shared canvas your whole team can refine in real time.
+        - list [ref=e13]:
+          - listitem [ref=e14]:
+            - img [ref=e16]
+            - generic [ref=e19]:
+              - paragraph [ref=e20]: AI Architecture Generation
+              - paragraph [ref=e21]: Describe your system, AI maps it to nodes and edges on a live canvas.
+          - listitem [ref=e22]:
+            - img [ref=e24]
+            - generic [ref=e30]:
+              - paragraph [ref=e31]: Real-time Collaboration
+              - paragraph [ref=e32]: Live cursors, presence indicators, and shared node editing across your team.
+          - listitem [ref=e33]:
+            - img [ref=e35]
+            - generic [ref=e38]:
+              - paragraph [ref=e39]: Instant Spec Generation
+              - paragraph [ref=e40]: Export a complete Markdown technical spec directly from the canvas graph.
+      - paragraph [ref=e41]: © 2026 Ghost AI. All rights reserved.
+    - main [ref=e42]
+  - button "Open Next.js Dev Tools" [ref=e48] [cursor=pointer]:
+    - img [ref=e49]
+  - alert [ref=e52]

@@ -1,8 +1,9 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useParams, useRouter } from "next/navigation"
+import { useState } from "react"
 
-import { mockProjects, slugify, type Project } from "@/lib/projects"
+import { slugify, type Project } from "@/lib/projects"
 
 type DialogState =
   | { type: "create" }
@@ -11,12 +12,12 @@ type DialogState =
   | null
 
 export interface UseProjectActions {
-  projects: Project[]
   ownedProjects: Project[]
   sharedProjects: Project[]
+  activeRoomId: string | null
   dialog: DialogState
   name: string
-  slug: string
+  roomId: string
   isSubmitting: boolean
   setName: (name: string) => void
   openCreate: () => void
@@ -28,29 +29,42 @@ export interface UseProjectActions {
   confirmDelete: () => void
 }
 
+interface UseProjectActionsInput {
+  ownedProjects: Project[]
+  sharedProjects: Project[]
+}
+
+/** Short, URL-safe suffix that keeps room ids unique per project name. */
+function generateSuffix(): string {
+  return Math.random().toString(36).slice(2, 8)
+}
+
 /**
- * Owns dialog, form, and loading state for project create/rename/delete.
- * Backed by mock data — mutations update local client state only, no API.
+ * Owns dialog and form state for project create/rename/delete and drives the
+ * real project API. Project lists are provided by the server component; after
+ * each mutation the router is refreshed (or navigated) so the server re-reads
+ * the data rather than the hook holding an optimistic local copy.
  */
-export function useProjectActions(): UseProjectActions {
-  const [projects, setProjects] = useState<Project[]>(mockProjects)
+export function useProjectActions({
+  ownedProjects,
+  sharedProjects,
+}: UseProjectActionsInput): UseProjectActions {
+  const router = useRouter()
+  const params = useParams<{ roomId?: string }>()
+  const activeRoomId = typeof params.roomId === "string" ? params.roomId : null
+
   const [dialog, setDialog] = useState<DialogState>(null)
   const [name, setName] = useState("")
+  const [suffix, setSuffix] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const ownedProjects = useMemo(
-    () => projects.filter((project) => project.role === "owner"),
-    [projects]
-  )
-  const sharedProjects = useMemo(
-    () => projects.filter((project) => project.role === "collaborator"),
-    [projects]
-  )
-
-  const slug = slugify(name)
+  // The project id and Liveblocks room id are the same value: the slugified
+  // name plus a stable suffix generated when the create dialog opens.
+  const roomId = `${slugify(name) || "project"}-${suffix}`
 
   function openCreate() {
     setName("")
+    setSuffix(generateSuffix())
     setDialog({ type: "create" })
   }
 
@@ -67,59 +81,87 @@ export function useProjectActions(): UseProjectActions {
     setDialog(null)
   }
 
-  function submitCreate() {
+  async function submitCreate() {
     const trimmed = name.trim()
-    if (!trimmed) return
+    if (!trimmed || isSubmitting) return
 
+    const id = roomId
     setIsSubmitting(true)
-    setProjects((current) => [
-      {
-        id: crypto.randomUUID(),
-        name: trimmed,
-        slug: slugify(trimmed),
-        role: "owner",
-      },
-      ...current,
-    ])
-    setIsSubmitting(false)
-    closeDialog()
+    try {
+      const response = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, name: trimmed }),
+      })
+      if (!response.ok) {
+        throw new Error(`Failed to create project (${response.status})`)
+      }
+      closeDialog()
+      router.push(`/editor/${id}`)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  function submitRename() {
-    if (dialog?.type !== "rename") return
+  async function submitRename() {
+    if (dialog?.type !== "rename" || isSubmitting) return
     const trimmed = name.trim()
     if (!trimmed) return
 
     const { project } = dialog
     setIsSubmitting(true)
-    setProjects((current) =>
-      current.map((item) =>
-        item.id === project.id
-          ? { ...item, name: trimmed, slug: slugify(trimmed) }
-          : item
-      )
-    )
-    setIsSubmitting(false)
-    closeDialog()
+    try {
+      const response = await fetch(`/api/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed }),
+      })
+      if (!response.ok) {
+        throw new Error(`Failed to rename project (${response.status})`)
+      }
+      closeDialog()
+      router.refresh()
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  function confirmDelete() {
-    if (dialog?.type !== "delete") return
+  async function confirmDelete() {
+    if (dialog?.type !== "delete" || isSubmitting) return
 
     const { project } = dialog
     setIsSubmitting(true)
-    setProjects((current) => current.filter((item) => item.id !== project.id))
-    setIsSubmitting(false)
-    closeDialog()
+    try {
+      const response = await fetch(`/api/projects/${project.id}`, {
+        method: "DELETE",
+      })
+      if (!response.ok) {
+        throw new Error(`Failed to delete project (${response.status})`)
+      }
+      closeDialog()
+      if (activeRoomId === project.id) {
+        router.push("/editor")
+      } else {
+        router.refresh()
+      }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return {
-    projects,
     ownedProjects,
     sharedProjects,
+    activeRoomId,
     dialog,
     name,
-    slug,
+    roomId,
     isSubmitting,
     setName,
     openCreate,

@@ -189,12 +189,14 @@ prisma migrate dev --config ./config/prisma.config.ts
 ```typescript
 import 'dotenv/config'
 import { defineConfig, env } from 'prisma/config'
-import path from 'path'
+import path from 'node:path'
 
 export default defineConfig({
-  schema: path.join(__dirname, 'packages/database/prisma/schema.prisma'),
+  // Paths resolve relative to this config file, so no __dirname is needed
+  // (and __dirname is not defined in ESM).
+  schema: path.join('packages/database/prisma', 'schema.prisma'),
   migrations: {
-    path: path.join(__dirname, 'packages/database/prisma/migrations'),
+    path: path.join('packages/database/prisma', 'migrations'),
   },
   datasource: {
     url: env('DATABASE_URL'),

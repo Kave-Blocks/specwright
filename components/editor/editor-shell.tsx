@@ -7,15 +7,22 @@ import { ProjectActionsProvider } from "@/components/editor/project-actions-cont
 import { ProjectDialogs } from "@/components/editor/project-dialogs"
 import { ProjectSidebar } from "@/components/editor/project-sidebar"
 import { useProjectActions } from "@/hooks/use-project-actions"
+import type { Project } from "@/lib/projects"
 import { cn } from "@/lib/utils"
 
 interface EditorShellProps {
+  ownedProjects: Project[]
+  sharedProjects: Project[]
   children: ReactNode
 }
 
-export function EditorShell({ children }: EditorShellProps) {
+export function EditorShell({
+  ownedProjects,
+  sharedProjects,
+  children,
+}: EditorShellProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const projectActions = useProjectActions()
+  const projectActions = useProjectActions({ ownedProjects, sharedProjects })
 
   return (
     <ProjectActionsProvider value={projectActions}>

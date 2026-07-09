@@ -21,14 +21,19 @@ const globalForLiveblocks = globalThis as unknown as {
   liveblocks: Liveblocks | undefined;
 };
 
-export function getLiveblocks(): Liveblocks {
-  const client = globalForLiveblocks.liveblocks ?? createLiveblocksClient();
+let cachedClient: Liveblocks | undefined;
 
+export function getLiveblocks(): Liveblocks {
+  // In dev, cache on `globalThis` so the client survives hot-reloads. In
+  // production, cache in a module-level variable that persists across warm
+  // invocations — otherwise a new client would be created on every call.
   if (process.env.NODE_ENV !== "production") {
-    globalForLiveblocks.liveblocks = client;
+    globalForLiveblocks.liveblocks ??= createLiveblocksClient();
+    return globalForLiveblocks.liveblocks;
   }
 
-  return client;
+  cachedClient ??= createLiveblocksClient();
+  return cachedClient;
 }
 
 /**

@@ -24,6 +24,8 @@ export type CanvasNodeData = {
 
 /** A node fill / text color pair tuned for the dark canvas. */
 export interface NodeColor {
+  /** Human-readable name, used for accessible labels. */
+  name: string
   /** Node background fill. */
   fill: string
   /** Contrasting label color. */
@@ -35,14 +37,14 @@ export interface NodeColor {
  * the default applied to newly created nodes.
  */
 export const NODE_COLORS: readonly NodeColor[] = [
-  { fill: "#1F1F1F", text: "#EDEDED" }, // Neutral dark (default)
-  { fill: "#10233D", text: "#52A8FF" }, // Blue
-  { fill: "#2E1938", text: "#BF7AF0" }, // Purple
-  { fill: "#331B00", text: "#FF990A" }, // Orange
-  { fill: "#3C1618", text: "#FF6166" }, // Red
-  { fill: "#3A1726", text: "#F75F8F" }, // Pink
-  { fill: "#0F2E18", text: "#62C073" }, // Green
-  { fill: "#062822", text: "#0AC7B4" }, // Teal
+  { name: "Neutral", fill: "#1F1F1F", text: "#EDEDED" }, // default
+  { name: "Blue", fill: "#10233D", text: "#52A8FF" },
+  { name: "Purple", fill: "#2E1938", text: "#BF7AF0" },
+  { name: "Orange", fill: "#331B00", text: "#FF990A" },
+  { name: "Red", fill: "#3C1618", text: "#FF6166" },
+  { name: "Pink", fill: "#3A1726", text: "#F75F8F" },
+  { name: "Green", fill: "#0F2E18", text: "#62C073" },
+  { name: "Teal", fill: "#062822", text: "#0AC7B4" },
 ] as const
 
 /** Fill applied to a node when none is chosen. */

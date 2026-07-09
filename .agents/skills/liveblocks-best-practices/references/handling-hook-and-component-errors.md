@@ -12,6 +12,7 @@ allows you to catch these errors. It must be used inside of
 
 ```tsx
 import { useErrorListener, useThreads } from "@liveblocks/react/suspense";
+import { Thread } from "@liveblocks/react-ui";
 
 // This component is used within `LiveblocksProvider`
 function Comments() {
@@ -89,52 +90,62 @@ useErrorListener((error) => {
     }
 
     // Can happen if you use Comments or Notifications
-    case "CREATE_THREAD_ERROR":
+    case "CREATE_THREAD_ERROR": {
       const { roomId, threadId, commentId, body, metadata } = error.context;
       break;
+    }
 
-    case "DELETE_THREAD_ERROR":
+    case "DELETE_THREAD_ERROR": {
       const { roomId, threadId } = error.context;
       break;
+    }
 
-    case "EDIT_THREAD_METADATA_ERROR":
+    case "EDIT_THREAD_METADATA_ERROR": {
       const { roomId, threadId, metadata } = error.context;
       break;
+    }
 
     case "MARK_THREAD_AS_RESOLVED_ERROR":
-    case "MARK_THREAD_AS_UNRESOLVED_ERROR":
+    case "MARK_THREAD_AS_UNRESOLVED_ERROR": {
       const { roomId, threadId } = error.context;
       break;
+    }
 
     case "CREATE_COMMENT_ERROR":
-    case "EDIT_COMMENT_ERROR":
+    case "EDIT_COMMENT_ERROR": {
       const { roomId, threadId, commentId, body } = error.context;
       break;
+    }
 
-    case "DELETE_COMMENT_ERROR":
+    case "DELETE_COMMENT_ERROR": {
       const { roomId, threadId, commentId } = error.context;
       break;
+    }
 
     case "ADD_REACTION_ERROR":
-    case "REMOVE_REACTION_ERROR":
+    case "REMOVE_REACTION_ERROR": {
       const { roomId, threadId, commentId, emoji } = error.context;
       break;
+    }
 
-    case "MARK_INBOX_NOTIFICATION_AS_READ_ERROR":
+    case "MARK_INBOX_NOTIFICATION_AS_READ_ERROR": {
       const { inboxNotificationId, roomId } = error.context;
       break;
+    }
 
-    case "DELETE_INBOX_NOTIFICATION_ERROR":
+    case "DELETE_INBOX_NOTIFICATION_ERROR": {
       const { roomId } = error.context;
       break;
+    }
 
     case "MARK_ALL_INBOX_NOTIFICATIONS_AS_READ_ERROR":
     case "DELETE_ALL_INBOX_NOTIFICATIONS_ERROR":
       break;
 
-    case "UPDATE_ROOM_SUBSCRIPTION_SETTINGS_ERROR":
+    case "UPDATE_ROOM_SUBSCRIPTION_SETTINGS_ERROR": {
       const { roomId } = error.context;
       break;
+    }
 
     default:
       // Ignore any error from the future

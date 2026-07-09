@@ -7,13 +7,9 @@ import {
   type NodeSize,
 } from "@/types/canvas"
 
-/** Monotonic counter so nodes created within the same millisecond stay unique. */
-let nodeCounter = 0
-
-/** Build a unique node id from the shape name, a timestamp, and a counter. */
+/** Build a globally-unique node id, safe across collaborating clients. */
 export function generateNodeId(shape: CanvasNodeShape): string {
-  nodeCounter += 1
-  return `${shape}-${Date.now()}-${nodeCounter}`
+  return `${shape}-${crypto.randomUUID()}`
 }
 
 /** Where a new node should be placed, in canvas (flow) coordinates. */

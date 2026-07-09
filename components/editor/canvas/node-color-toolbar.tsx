@@ -31,14 +31,14 @@ export function NodeColorToolbar({ activeColor, onSelect }: NodeColorToolbarProp
       onPointerDown={swallow}
       onDoubleClick={swallow}
     >
-      {NODE_COLORS.map(({ fill, text }) => {
+      {NODE_COLORS.map(({ name, fill, text }) => {
         const isActive = fill === activeColor
         const isHovered = hovered === fill
         return (
           <button
             key={fill}
             type="button"
-            aria-label={`Set node color`}
+            aria-label={`Set node color to ${name}`}
             aria-pressed={isActive}
             onClick={(event) => {
               event.stopPropagation()

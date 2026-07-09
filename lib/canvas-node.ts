@@ -1,6 +1,7 @@
 import {
   CANVAS_NODE_TYPE,
   DEFAULT_NODE_COLOR,
+  DEFAULT_NODE_TEXT_COLOR,
   type CanvasNode,
   type CanvasNodeShape,
   type NodeSize,
@@ -23,7 +24,7 @@ export interface CanvasPosition {
 
 /**
  * Create a new canvas node at the given position: an empty label, the default
- * node color, the dragged shape, and the shape's default footprint.
+ * node color pair, the dragged shape, and the shape's default footprint.
  */
 export function createCanvasNode(
   shape: CanvasNodeShape,
@@ -35,6 +36,11 @@ export function createCanvasNode(
     type: CANVAS_NODE_TYPE,
     position,
     style: { width: size.width, height: size.height },
-    data: { label: "", color: DEFAULT_NODE_COLOR, shape },
+    data: {
+      label: "",
+      color: DEFAULT_NODE_COLOR,
+      textColor: DEFAULT_NODE_TEXT_COLOR,
+      shape,
+    },
   }
 }

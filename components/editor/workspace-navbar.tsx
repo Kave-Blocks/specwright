@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  LayoutTemplate,
   PanelLeftClose,
   PanelLeftOpen,
   Share2,
@@ -17,6 +18,7 @@ interface WorkspaceNavbarProps {
   isAiSidebarOpen: boolean
   onToggleAiSidebar: () => void
   onOpenShare: () => void
+  onOpenTemplates: () => void
 }
 
 export function WorkspaceNavbar({
@@ -26,6 +28,7 @@ export function WorkspaceNavbar({
   isAiSidebarOpen,
   onToggleAiSidebar,
   onOpenShare,
+  onOpenTemplates,
 }: WorkspaceNavbarProps) {
   const SidebarToggleIcon = isSidebarOpen ? PanelLeftClose : PanelLeftOpen
 
@@ -49,6 +52,10 @@ export function WorkspaceNavbar({
       </div>
 
       <div className="flex items-center gap-1 justify-self-end">
+        <Button variant="ghost" size="sm" onClick={onOpenTemplates}>
+          <LayoutTemplate className="h-4 w-4" />
+          Templates
+        </Button>
         <Button variant="outline" size="sm" onClick={onOpenShare}>
           <Share2 className="h-4 w-4" />
           Share

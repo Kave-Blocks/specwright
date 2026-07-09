@@ -1,4 +1,5 @@
-import type { Edge, Node } from "@xyflow/react"
+import { MarkerType } from "@xyflow/react"
+import type { DefaultEdgeOptions, Edge, Node } from "@xyflow/react"
 
 /** Visual shape a canvas node can be rendered as. */
 export type CanvasNodeShape =
@@ -13,8 +14,10 @@ export type CanvasNodeShape =
 export type CanvasNodeData = {
   /** Text shown inside the node. */
   label: string
-  /** Accent color for the node (any CSS color string). */
+  /** Background fill color for the node (any CSS color string). */
   color: string
+  /** Label color, paired with `color` (see `NODE_COLORS`). */
+  textColor: string
   /** Shape the node is drawn as. */
   shape: CanvasNodeShape
 }
@@ -44,6 +47,9 @@ export const NODE_COLORS: readonly NodeColor[] = [
 
 /** Fill applied to a node when none is chosen. */
 export const DEFAULT_NODE_COLOR = NODE_COLORS[0].fill
+
+/** Label color applied to a node when none is chosen (pairs with the default fill). */
+export const DEFAULT_NODE_TEXT_COLOR = NODE_COLORS[0].text
 
 /** Pixel footprint a node occupies on the canvas. */
 export interface NodeSize {
@@ -89,8 +95,42 @@ export const CANVAS_NODE_TYPE = "canvasNode" as const
 /** Custom edge type name registered with React Flow. */
 export const CANVAS_EDGE_TYPE = "canvasEdge" as const
 
+/**
+ * Default edge stroke / arrow color (see `context/ui-context.md` → Edge Style).
+ * A raw color string because React Flow edge/marker props can't consume Tailwind
+ * tokens — the same boundary exception already used for the Background/MiniMap.
+ */
+export const CANVAS_EDGE_COLOR = "#f8fafc"
+
+/** Data carried by every edge on the collaborative canvas. */
+export type CanvasEdgeData = {
+  /** Inline label shown as a pill along the edge (empty when unlabeled). */
+  label?: string
+}
+
 /** A node on the collaborative canvas. */
 export type CanvasNode = Node<CanvasNodeData, typeof CANVAS_NODE_TYPE>
 
 /** An edge on the collaborative canvas. */
-export type CanvasEdge = Edge<Record<string, unknown>, typeof CANVAS_EDGE_TYPE>
+export type CanvasEdge = Edge<CanvasEdgeData, typeof CANVAS_EDGE_TYPE>
+
+/**
+ * Style applied to every new connection: the custom canvas edge renderer, a
+ * closed arrowhead at the end, and a light, thin stroke with rounded ends.
+ * `onConnect` merges these onto the connection (Liveblocks' own `onConnect` does
+ * not apply React Flow's `defaultEdgeOptions`, so the edge is built explicitly).
+ */
+export const DEFAULT_EDGE_OPTIONS: DefaultEdgeOptions = {
+  type: CANVAS_EDGE_TYPE,
+  markerEnd: {
+    type: MarkerType.ArrowClosed,
+    width: 18,
+    height: 18,
+    color: CANVAS_EDGE_COLOR,
+  },
+  style: {
+    stroke: CANVAS_EDGE_COLOR,
+    strokeWidth: 1.5,
+    strokeLinecap: "round",
+  },
+}

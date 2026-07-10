@@ -117,6 +117,19 @@ export type CanvasNode = Node<CanvasNodeData, typeof CANVAS_NODE_TYPE>
 export type CanvasEdge = Edge<CanvasEdgeData, typeof CANVAS_EDGE_TYPE>
 
 /**
+ * A serializable snapshot of the whole canvas graph. This is the exact JSON
+ * shape persisted to Vercel Blob and loaded back into the room — Prisma only
+ * stores the blob URL, never this content.
+ */
+export interface CanvasSnapshot {
+  nodes: CanvasNode[]
+  edges: CanvasEdge[]
+}
+
+/** Lifecycle of a debounced canvas autosave, surfaced in the navbar indicator. */
+export type CanvasSaveStatus = "idle" | "saving" | "saved" | "error"
+
+/**
  * Style applied to every new connection: the custom canvas edge renderer, a
  * closed arrowhead at the end, and a light, thin stroke with rounded ends.
  * `onConnect` merges these onto the connection (Liveblocks' own `onConnect` does

@@ -25,11 +25,12 @@ export function CanvasRoom({ roomId }: CanvasRoomProps) {
     <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
       <RoomProvider
         id={roomId}
-        initialPresence={{ cursor: null, isThinking: false }}
+        initialPresence={{ cursor: null, thinking: false }}
       >
         <CanvasErrorBoundary fallback={<CanvasError />}>
           <ClientSideSuspense fallback={<CanvasLoading />}>
-            <Canvas />
+            {/* The room id is the project id; the canvas uses it to autosave. */}
+            <Canvas projectId={roomId} />
           </ClientSideSuspense>
         </CanvasErrorBoundary>
       </RoomProvider>

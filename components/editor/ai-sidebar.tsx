@@ -1,8 +1,11 @@
 "use client"
 
-import { Sparkles, X } from "lucide-react"
+import { Bot, X } from "lucide-react"
 
+import { AiArchitectTab } from "@/components/editor/ai/ai-architect-tab"
+import { SpecsTab } from "@/components/editor/ai/specs-tab"
 import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 
 interface AiSidebarProps {
@@ -15,10 +18,25 @@ interface AiSidebarProps {
   docked?: boolean
 }
 
+/*
+ * Token mapping — the spec describes colors with loose names; per the spec's
+ * "use existing project color tokens" rule they resolve to the real tokens:
+ *   text-primary-text → text-copy-primary   text-muted-text  → text-copy-muted
+ *   bg-accent (tab)   → bg-accent-dim        text-accent      → text-brand
+ *   text-accent-text  → text-brand           bg-brand-dim     → bg-accent-dim
+ *   bg-accent (button)→ bg-brand
+ * The sidebar surface keeps its existing `bg-surface/95` (a real token that
+ * supports the /95 opacity modifier, unlike the standalone `bg-base` utility).
+ */
+
+/** Active-tab styling: brand-tinted accent; inactive stays muted. */
+const TAB_TRIGGER_CLASS =
+  "text-copy-muted data-active:bg-accent-dim data-active:text-brand dark:data-active:bg-accent-dim dark:data-active:text-brand"
+
 /**
- * Right-hand slide-over placeholder for the future AI chat panel. Mirrors the
- * docking treatment of the left `ProjectSidebar` and holds no real chat logic
- * yet.
+ * Floating AI chat sidebar for a `/editor/[roomId]` room. Open/close state is
+ * owned by the parent; this component renders the sidebar surface (header +
+ * tabbed AI Architect / Specs UI). No chat/AI/backend logic is wired yet.
  */
 export function AiSidebar({ isOpen, onClose, docked = false }: AiSidebarProps) {
   return (
@@ -26,7 +44,7 @@ export function AiSidebar({ isOpen, onClose, docked = false }: AiSidebarProps) {
       aria-hidden={!isOpen}
       className={cn(
         // Card visuals shared by both variants.
-        "z-30 flex w-80 flex-col rounded-2xl border border-surface-border bg-surface/95 shadow-2xl backdrop-blur-sm",
+        "z-30 flex w-80 flex-col overflow-hidden rounded-2xl border border-surface-border bg-surface/95 shadow-2xl backdrop-blur-sm",
         // Mobile overlay positioning (base) — docked mode overrides at md+.
         "fixed right-3 top-[calc(var(--editor-navbar-height)+0.75rem)] h-[calc(100vh-var(--editor-navbar-height)-1.5rem)]",
         docked
@@ -41,10 +59,19 @@ export function AiSidebar({ isOpen, onClose, docked = false }: AiSidebarProps) {
       )}
     >
       <div className="flex items-center justify-between border-b border-surface-border px-4 py-3">
-        <h2 className="flex items-center gap-2 font-heading text-base font-medium text-copy-primary">
-          <Sparkles className="h-4 w-4 text-ai-text" />
-          AI Assistant
-        </h2>
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-subtle text-ai-text">
+            <Bot className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="truncate font-heading text-base font-medium text-copy-primary">
+              AI Workspace
+            </h2>
+            <p className="truncate text-xs text-copy-muted">
+              Collaborate with Ghost AI
+            </p>
+          </div>
+        </div>
         <Button
           variant="ghost"
           size="icon-sm"
@@ -55,12 +82,34 @@ export function AiSidebar({ isOpen, onClose, docked = false }: AiSidebarProps) {
         </Button>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
-        <p className="text-sm text-copy-muted">AI chat coming soon</p>
-        <p className="text-xs text-copy-faint">
-          Generate and refine your design with the AI assistant.
-        </p>
-      </div>
+      <Tabs
+        defaultValue="architect"
+        className="flex flex-1 flex-col overflow-hidden"
+      >
+        <div className="px-4 pt-3">
+          <TabsList className="w-full">
+            <TabsTrigger
+              value="architect"
+              className={cn("flex-1", TAB_TRIGGER_CLASS)}
+            >
+              AI Architect
+            </TabsTrigger>
+            <TabsTrigger
+              value="specs"
+              className={cn("flex-1", TAB_TRIGGER_CLASS)}
+            >
+              Specs
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="architect" className="flex-1 overflow-hidden">
+          <AiArchitectTab />
+        </TabsContent>
+        <TabsContent value="specs" className="flex-1 overflow-hidden">
+          <SpecsTab />
+        </TabsContent>
+      </Tabs>
     </aside>
   )
 }

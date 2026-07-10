@@ -8,8 +8,10 @@ import {
   Sparkles,
 } from "lucide-react"
 
+import { SaveStatusButton } from "@/components/editor/save-status-button"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import type { CanvasSaveStatus } from "@/types/canvas"
 
 interface WorkspaceNavbarProps {
   projectName: string
@@ -19,6 +21,8 @@ interface WorkspaceNavbarProps {
   onToggleAiSidebar: () => void
   onOpenShare: () => void
   onOpenTemplates: () => void
+  saveStatus: CanvasSaveStatus
+  onSave: () => void
 }
 
 export function WorkspaceNavbar({
@@ -29,6 +33,8 @@ export function WorkspaceNavbar({
   onToggleAiSidebar,
   onOpenShare,
   onOpenTemplates,
+  saveStatus,
+  onSave,
 }: WorkspaceNavbarProps) {
   const SidebarToggleIcon = isSidebarOpen ? PanelLeftClose : PanelLeftOpen
 
@@ -52,6 +58,7 @@ export function WorkspaceNavbar({
       </div>
 
       <div className="flex items-center gap-1 justify-self-end">
+        <SaveStatusButton status={saveStatus} onSave={onSave} />
         <Button variant="ghost" size="sm" onClick={onOpenTemplates}>
           <LayoutTemplate className="h-4 w-4" />
           Templates

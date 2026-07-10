@@ -53,11 +53,27 @@ export function ShapePanel() {
     event.dataTransfer.setData(SHAPE_DRAG_MIME, JSON.stringify(payload))
     event.dataTransfer.effectAllowed = "copy"
 
-    const preview = previewRefs.current[shape]
-    if (preview) {
-      // Centered under the cursor; the browser keeps this attached while
-      // dragging and clears it automatically on drop or cancel.
-      event.dataTransfer.setDragImage(preview, size.width / 2, size.height / 2)
+    const source = previewRefs.current[shape]
+    if (source) {
+      // `setDragImage` snapshots a *painted, on-screen* element; the template
+      // previews live off-screen (left:-9999px) so they can't be rasterized and
+      // no ghost appears. Clone the matching preview into the body positioned at
+      // the cursor — on-screen so it snapshots, and coincident with the drag
+      // image so there's no flash — then remove it once the browser has grabbed
+      // its snapshot. Centered under the cursor via the (w/2, h/2) hotspot.
+      const ghost = source.cloneNode(true) as HTMLDivElement
+      Object.assign(ghost.style, {
+        position: "fixed",
+        left: `${event.clientX - size.width / 2}px`,
+        top: `${event.clientY - size.height / 2}px`,
+        width: `${size.width}px`,
+        height: `${size.height}px`,
+        margin: "0",
+        pointerEvents: "none",
+      })
+      document.body.appendChild(ghost)
+      event.dataTransfer.setDragImage(ghost, size.width / 2, size.height / 2)
+      requestAnimationFrame(() => ghost.remove())
     }
   }
 

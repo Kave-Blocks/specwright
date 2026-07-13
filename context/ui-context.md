@@ -22,11 +22,14 @@ All colors are defined as CSS custom properties in `globals.css` and mapped to T
 | Brand dim        | `--accent-primary-dim` | `rgba(0, 200, 212, 0.12)` |
 | AI accent        | `--accent-ai`          | `#6457f9` (indigo-purple) |
 | AI text          | `--accent-ai-text`     | `#8b82ff`                 |
+| Chat accent      | `--accent-green`       | `#62C073` (green)         |
 | Error            | `--state-error`        | `#ff4d4f`                 |
 | Success          | `--state-success`      | `#34d399`                 |
 | Warning          | `--state-warning`      | `#fbbf24`                 |
 
-Tailwind utility names map to these variables. Use `bg-base`, `bg-surface`, `text-copy-primary`, `text-copy-muted`, `border-surface-border`, `text-brand`, `bg-accent-dim`, etc.
+Tailwind utility names map to these variables. Use `bg-base`, `bg-surface`, `text-copy-primary`, `text-copy-muted`, `border-surface-border`, `text-brand`, `bg-accent-dim`, `bg-accent-green`, etc.
+
+The chat accent (`--accent-green`) is the AI chat's own accent: it fills the user's chat bubbles, the send button, and the AI status strip in the AI sidebar. It is the same green already in the canvas node palette below, promoted to a token so it can be used as a surface — text on it must be `var(--bg-base)` for contrast, never light text.
 
 ## Typography
 
@@ -92,6 +95,10 @@ React Flow `<Background>` component. Canvas sits on the base background color.
 ## Component Library
 
 shadcn/ui on top of Tailwind. No custom design system. Components live in `components/ui/`. Use the `shadcn` CLI to add new components rather than writing them from scratch.
+
+### Markdown
+
+Generated specs render with `react-markdown` + `remark-gfm` (tables and task lists are GitHub extensions, not CommonMark). `@tailwindcss/typography` is deliberately **not** installed — a prose plugin's light-mode defaults would fight this palette — so every element is styled explicitly against the tokens above in `components/editor/ai/spec-markdown.tsx`. Raw HTML is not rendered (no `rehype-raw`): spec content is LLM-authored, so any markup in it is escaped to visible text.
 
 ## Layout Patterns
 

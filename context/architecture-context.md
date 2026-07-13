@@ -37,6 +37,14 @@
 - Only the owner or a collaborator can mutate project resources.
 - Liveblocks room tokens are issued only after verifying project membership.
 
+## Realtime Model
+
+- One Liveblocks room per project; the room ID is the project ID.
+- The editor opens a single room connection, shared by the canvas and the AI sidebar — there is no second realtime channel.
+- Realtime state uses Liveblocks primitives only: Storage for canvas content, presence for cursors and AI activity, and feeds for message streams.
+- Feeds are room-scoped and single-purpose. `ai-status-feed` carries AI progress; `ai-chat` carries collaborative chat. Producers and readers never mix the two.
+- Feed payloads are untrusted input (they cross the network from other clients) and are validated before they are rendered.
+
 ## Starter System Designs
 
 - Prebuilt templates are static canvas snapshots stored in the codebase.
@@ -55,9 +63,28 @@
 
 ### Spec Generation
 
-- Input: current canvas graph and project context.
+- Input: current canvas graph plus the room's chat history.
 - Execution: durable background task via Trigger.dev.
-- Output: Markdown technical spec saved to the filesystem and linked to the project in the database.
+- Progress is tracked on the run's own metadata, not on a room feed: a spec is written for the person who requested it, whereas design generation mutates the shared canvas and so broadcasts to everyone.
+- Output: a Markdown technical spec returned as the task output.
+- The task also persists the spec before it finishes: the Markdown is uploaded to Vercel Blob and a `ProjectSpec` row records the blob URL against the project. Persisting belongs to the task, not a request handler — it is the only place that runs once a spec exists without a client having to stay on the page.
+- The run's metadata carries the resulting `specId` (never the blob URL), which is what a caller passes to the download route.
+
+### Spec Retrieval
+
+- Two routes, both behind project membership:
+  - `GET /api/projects/{projectId}/specs` lists a project's specs, newest first — **metadata only** (`id`, `filename`, `createdAt`).
+  - `GET /api/projects/{projectId}/specs/{specId}/download` returns one spec's Markdown.
+- The download route proves project membership, then proves the spec belongs to that project, and only then dereferences the blob and streams it as a Markdown attachment.
+- It is also the **only** way a client reads spec content — the preview fetches the same route and reads the body as text. `Content-Disposition: attachment` governs a browser navigation, not a `fetch`, so one route serves both without a second endpoint.
+- Blob URLs are never returned to a client. `ProjectSpec.filePath` is never selected into a response; the listing derives its `filename` from the spec id instead. The store is private, so a URL is not fetchable without the SDK's credentials — but access is enforced at the route regardless, not by URL secrecy.
+- Spec content is never held in long-lived frontend state: the preview fetches it on open and drops it on close.
+
+### Run Ownership
+
+- Triggering an AI task records a `TaskRun` (run id, project id, user id).
+- A realtime run token is issued only to the user the `TaskRun` belongs to.
+- Project access is resolved from the authenticated user and the room id. A client-supplied project id is never trusted.
 
 ## Invariants
 

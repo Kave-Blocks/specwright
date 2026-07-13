@@ -2,7 +2,7 @@
 
 import { useMemo } from "react"
 import { UserButton, useUser } from "@clerk/nextjs"
-import { useOthers } from "@liveblocks/react/suspense"
+import { shallow, useOthersMapped } from "@liveblocks/react/suspense"
 
 import { CollaboratorAvatar } from "./collaborator-avatar"
 
@@ -26,28 +26,43 @@ interface Collaborator {
  * how many connections they hold. The current user is rendered separately via
  * Clerk's `UserButton`, kept the same size as the collaborator avatars, with a
  * divider between the two only when at least one collaborator is present.
+ *
+ * Presence is read with `useOthersMapped` rather than a bare `useOthers()`: the
+ * avatar stack only cares about identity, which almost never changes, while
+ * presence itself changes constantly as people move their cursors. Mapping to
+ * just the identity fields (compared shallowly) keeps remote mouse movement from
+ * re-rendering the stack many times a second.
  */
 export function PresenceAvatars() {
   const { user } = useUser()
   const currentUserId = user?.id ?? null
-  const others = useOthers()
+
+  const others = useOthersMapped(
+    (other) => ({
+      id: other.id,
+      name: other.info.name,
+      avatar: other.info.avatar,
+      color: other.info.color,
+    }),
+    shallow
+  )
 
   const collaborators = useMemo<Collaborator[]>(() => {
     const seen = new Set<string>()
     const list: Collaborator[] = []
 
-    for (const other of others) {
-      const id = other.id
+    for (const [connectionId, info] of others) {
+      const id = info.id
       // Skip the current user's own connections and any duplicate connection
       // from a collaborator who already appears in the stack.
       if (!id || id === currentUserId || seen.has(id)) continue
       seen.add(id)
       list.push({
-        connectionId: other.connectionId,
+        connectionId,
         id,
-        name: other.info.name,
-        avatar: other.info.avatar,
-        color: other.info.color,
+        name: info.name,
+        avatar: info.avatar,
+        color: info.color,
       })
     }
 

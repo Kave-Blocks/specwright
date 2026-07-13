@@ -1,0 +1,16 @@
+/// Metadata for one generated Markdown technical spec. Metadata only — the
+/// Markdown itself lives in Vercel Blob at `specs/{projectId}/{specId}.md`, and
+/// `filePath` holds the blob URL used to read it back (the same split the canvas
+/// uses via `Project.canvasJsonPath`). The store is private, so the URL is never
+/// handed out directly; it is only dereferenced behind an access check.
+model ProjectSpec {
+  id        String   @id @default(cuid())
+  projectId String
+  filePath  String
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Specs are always listed newest-first within a project.
+  @@index([projectId, createdAt])
+}

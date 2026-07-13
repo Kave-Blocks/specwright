@@ -1,3 +1,4 @@
+import { prismaExtension } from "@trigger.dev/build/extensions/prisma";
 import { defineConfig } from "@trigger.dev/sdk";
 import { config } from "dotenv";
 
@@ -19,6 +20,20 @@ export default defineConfig({
   runtime: "node",
   dirs: ["./trigger"],
   maxDuration: 36000,
+  build: {
+    extensions: [
+      // `generate-spec` writes a `ProjectSpec` row, so Prisma is now part of the
+      // task bundle. "modern" is the mode for this project's setup — Prisma 7
+      // with the `prisma-client` provider and the `@prisma/adapter-pg` driver
+      // adapter — and it keeps `@prisma/client` external (the generated client
+      // in `app/generated/prisma` imports `@prisma/client/runtime/client`).
+      //
+      // Modern mode does not run `prisma generate` for you. The generated client
+      // is gitignored, so a deploy must run `prisma generate` first — the same
+      // pre-existing requirement the Next.js build already has.
+      prismaExtension({ mode: "modern" }),
+    ],
+  },
   retries: {
     enabledInDev: false,
     default: {

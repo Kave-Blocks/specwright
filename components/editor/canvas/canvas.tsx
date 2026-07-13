@@ -48,10 +48,14 @@ import {
 import { CanvasNodeRenderer } from "./canvas-node"
 import { CanvasEdgeRenderer } from "./canvas-edge"
 import { CanvasActionsProvider } from "./canvas-context"
+import { useCanvasGraph } from "./canvas-graph-context"
 import { useCanvasSave } from "./canvas-save-context"
+import { AiActivityBridge } from "./ai-activity-bridge"
+import { AiStatusFeed } from "./ai-status-feed"
 import { CanvasControls } from "./canvas-controls"
 import { LiveCursors } from "./live-cursors"
 import { PresenceAvatars } from "./presence-avatars"
+import { RemoteSelectionProvider } from "./remote-selection-context"
 import { ShapePanel } from "./shape-panel"
 
 import "@xyflow/react/dist/style.css"
@@ -88,6 +92,14 @@ function CanvasFlow({ projectId }: { projectId: string }) {
   const { isOpen: isTemplatesOpen, setOpen: setTemplatesOpen } =
     useStarterTemplates()
   const { setStatus, saveNowRef } = useCanvasSave()
+
+  // Keep the sidebar's view of the graph current, so "Generate Spec" describes
+  // the canvas as it stands. A ref, not state: this changes on every drag, and
+  // nothing renders from it (see `canvas-graph-context.ts`).
+  const { graphRef } = useCanvasGraph()
+  useEffect(() => {
+    graphRef.current = { nodes, edges }
+  }, [nodes, edges, graphRef])
 
   // Delete / Backspace removes the selected nodes and edges through the shared
   // Liveblocks state so it syncs to everyone (RF's own keyboard deletion is
@@ -312,6 +324,33 @@ function CanvasFlow({ projectId }: { projectId: string }) {
     updateMyPresence({ cursor: null })
   }, [updateMyPresence])
 
+  // Broadcast what this user has selected. Selection is deliberately not part of
+  // the synced graph — `@liveblocks/react-flow` pins `selected: false` in its
+  // node/edge config so one user's selection can never clobber another's — so it
+  // travels through presence instead, and clears itself on disconnect.
+  const handleSelectionChange = useCallback(
+    ({
+      nodes: selectedNodes,
+      edges: selectedEdges,
+    }: {
+      nodes: CanvasNode[]
+      edges: CanvasEdge[]
+    }) => {
+      if (selectedNodes.length === 0 && selectedEdges.length === 0) {
+        updateMyPresence({ selection: null })
+        return
+      }
+
+      updateMyPresence({
+        selection: {
+          nodes: selectedNodes.map((node) => node.id),
+          edges: selectedEdges.map((edge) => edge.id),
+        },
+      })
+    },
+    [updateMyPresence]
+  )
+
   // Replace the canvas with a starter template: clear the current graph, add the
   // template's nodes and edges, then fit the new graph into view. Liveblocks'
   // change handlers treat `"remove"` as a no-op (deletion happens through
@@ -345,28 +384,36 @@ function CanvasFlow({ projectId }: { projectId: string }) {
       onDrop={onDrop}
     >
       <CanvasActionsProvider value={canvasActions}>
-        <ReactFlow<CanvasNode, CanvasEdge>
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={handleConnect}
-          onDelete={onDelete}
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
-          connectionMode={ConnectionMode.Loose}
-          colorMode="dark"
-          deleteKeyCode={null}
-        >
-          {/* Colors are raw strings because React Flow props can't take Tailwind
-           * tokens; values mirror the ui-context palette (base/surface/border). */}
-          <Background variant={BackgroundVariant.Dots} color="#2a2a30" />
-          <LiveCursors />
-        </ReactFlow>
+        {/* Wraps the flow so node and edge renderers can show who else has them
+         * selected, from a single shared presence subscription. */}
+        <RemoteSelectionProvider>
+          <ReactFlow<CanvasNode, CanvasEdge>
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={handleConnect}
+            onDelete={onDelete}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            onSelectionChange={handleSelectionChange}
+            connectionMode={ConnectionMode.Loose}
+            colorMode="dark"
+            deleteKeyCode={null}
+          >
+            {/* Colors are raw strings because React Flow props can't take Tailwind
+             * tokens; values mirror the ui-context palette (base/surface/border). */}
+            <Background variant={BackgroundVariant.Dots} color="#2a2a30" />
+            <LiveCursors />
+          </ReactFlow>
+        </RemoteSelectionProvider>
       </CanvasActionsProvider>
+      {/* Reports shared AI status/presence up to the sidebar (outside the room). */}
+      <AiActivityBridge />
+      <AiStatusFeed />
       <PresenceAvatars />
       <CanvasControls />
       <ShapePanel />

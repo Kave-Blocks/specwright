@@ -54,5 +54,12 @@ export const POST = async (request: Request): Promise<NextResponse> => {
     },
   });
 
-  return NextResponse.json({ runId: handle.id }, { status: 201 });
+  // The handle already carries a JWT scoped to reading just this run, which is
+  // exactly what the client needs to subscribe with `useRealtimeRun` — so it is
+  // handed straight back rather than minting a second token. (The separate
+  // `/api/ai/design/token` route stays for re-issuing one later.)
+  return NextResponse.json(
+    { runId: handle.id, publicToken: handle.publicAccessToken },
+    { status: 201 },
+  );
 };

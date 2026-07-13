@@ -61,6 +61,7 @@
     --color-accent-dim: var(--accent-primary-dim);
     --color-ai: var(--accent-ai);
     --color-ai-text: var(--accent-ai-text);
+    --color-accent-green: var(--accent-green);
     --color-error: var(--state-error);
     --color-success: var(--state-success);
     --color-warning: var(--state-warning);
@@ -91,6 +92,10 @@
     --accent-primary-dim: rgba(0, 200, 212, 0.12);
     --accent-ai: #6457f9;
     --accent-ai-text: #8b82ff;
+    /* Chat accent — the palette green already used for Green nodes
+     * (`NODE_COLORS` in types/canvas.ts), promoted to a token so the AI chat can
+     * use it as a surface. Dark text (`--bg-base`) sits on it for contrast. */
+    --accent-green: #62c073;
     --state-error: #ff4d4f;
     --state-success: #34d399;
     --state-warning: #fbbf24;

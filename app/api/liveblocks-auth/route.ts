@@ -2,7 +2,12 @@ import { currentUser } from "@clerk/nextjs/server";
 import type { User } from "@clerk/backend";
 import { NextResponse } from "next/server";
 
-import { getLiveblocks, getUserColor } from "@/lib/liveblocks";
+import {
+  ensureAiChatFeed,
+  ensureAiStatusFeed,
+  getLiveblocks,
+  getUserColor,
+} from "@/lib/liveblocks";
 import { getAccessibleProject } from "@/lib/project-access";
 import { readJsonBody } from "@/lib/projects-api";
 
@@ -43,6 +48,21 @@ export async function POST(request: Request): Promise<Response> {
   const liveblocks = getLiveblocks();
   await ensureRoom(liveblocks, roomId);
 
+  // Ensure the room's shared feeds exist so subscribing to them (via
+  // `useFeedMessages`) succeeds before anything has been published: the AI
+  // status feed before the first generation, the chat feed before the first
+  // message. Best-effort: a feed hiccup must never block the user from entering
+  // the room — but it is logged, because a persistent failure here (bad key,
+  // rate limit, Liveblocks outage) silently costs the user their status feed.
+  try {
+    await Promise.all([
+      ensureAiStatusFeed(liveblocks, roomId),
+      ensureAiChatFeed(liveblocks, roomId),
+    ]);
+  } catch (error) {
+    console.error("Failed to ensure Liveblocks feeds", { roomId, error });
+  }
+
   const session = liveblocks.prepareSession(user.id, {
     userInfo: {
       name: displayName(user, email),
@@ -56,20 +76,21 @@ export async function POST(request: Request): Promise<Response> {
   return new Response(sessionBody, { status });
 }
 
-/** Create the room only if it does not already exist. */
+/**
+ * Create the room only if it does not already exist.
+ *
+ * `getOrCreateRoom` is a single idempotent API call (`POST /v2/rooms?idempotent`)
+ * that returns the room whether or not it existed, so there is no get-then-create
+ * race to lose and no error to suppress. A genuine failure — auth, rate limit,
+ * 5xx — propagates and fails the request. Unlike the cosmetic feeds, the room is
+ * load-bearing: minting a session token for a room we could not confirm exists
+ * only moves the failure into the client, with no server-side trace of why.
+ */
 async function ensureRoom(
   liveblocks: ReturnType<typeof getLiveblocks>,
   roomId: string,
 ): Promise<void> {
-  try {
-    await liveblocks.getRoom(roomId);
-  } catch {
-    try {
-      await liveblocks.createRoom(roomId, { defaultAccesses: [] });
-    } catch {
-      // A concurrent request may have created it first; that's fine.
-    }
-  }
+  await liveblocks.getOrCreateRoom(roomId, { defaultAccesses: [] });
 }
 
 /** Resolve the user's primary email, falling back to the first address. */

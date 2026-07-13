@@ -3,6 +3,7 @@
 import { Bot, X } from "lucide-react"
 
 import { AiArchitectTab } from "@/components/editor/ai/ai-architect-tab"
+import type { AiActivity } from "@/components/editor/ai/ai-activity-context"
 import { SpecsTab } from "@/components/editor/ai/specs-tab"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -11,6 +12,10 @@ import { cn } from "@/lib/utils"
 interface AiSidebarProps {
   isOpen: boolean
   onClose: () => void
+  /** Room/project id the AI Architect generates into (room id ≡ project id). */
+  projectId: string
+  /** Shared AI activity (status feed + working state), bridged out of the room. */
+  aiActivity: AiActivity
   /**
    * When true, the panel docks as an in-flow column on desktop (sharing the
    * row with the canvas) while staying a slide-over overlay on mobile.
@@ -36,9 +41,16 @@ const TAB_TRIGGER_CLASS =
 /**
  * Floating AI chat sidebar for a `/editor/[roomId]` room. Open/close state is
  * owned by the parent; this component renders the sidebar surface (header +
- * tabbed AI Architect / Specs UI). No chat/AI/backend logic is wired yet.
+ * tabbed AI Architect / Specs UI). It renders inside `EditorRoom`, so the
+ * AI Architect tab can read and write the room's shared `ai-chat` feed.
  */
-export function AiSidebar({ isOpen, onClose, docked = false }: AiSidebarProps) {
+export function AiSidebar({
+  isOpen,
+  onClose,
+  projectId,
+  aiActivity,
+  docked = false,
+}: AiSidebarProps) {
   return (
     <aside
       aria-hidden={!isOpen}
@@ -104,10 +116,10 @@ export function AiSidebar({ isOpen, onClose, docked = false }: AiSidebarProps) {
         </div>
 
         <TabsContent value="architect" className="flex-1 overflow-hidden">
-          <AiArchitectTab />
+          <AiArchitectTab projectId={projectId} aiActivity={aiActivity} />
         </TabsContent>
         <TabsContent value="specs" className="flex-1 overflow-hidden">
-          <SpecsTab />
+          <SpecsTab projectId={projectId} />
         </TabsContent>
       </Tabs>
     </aside>

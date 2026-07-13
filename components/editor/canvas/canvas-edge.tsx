@@ -18,11 +18,20 @@ import {
 import { CANVAS_EDGE_COLOR, type CanvasEdge } from "@/types/canvas"
 
 import { useCanvasActions } from "./canvas-context"
+import { useRemoteEdgeSelectors } from "./remote-selection-context"
 
 /** Corner rounding of the right-angle routing. */
 const EDGE_BORDER_RADIUS = 8
 /** Visible line thickness (kept constant so the hit area can widen on its own). */
 const EDGE_STROKE_WIDTH = 1.5
+/** Thicker stroke while another participant has the edge selected, so it stands out. */
+const EDGE_STROKE_WIDTH_REMOTE = 2.5
+/**
+ * How far above the edge's midpoint the remote-selector name badge sits. A
+ * remote selection always forces the label pill to show (it makes the edge
+ * `active`), so the badge is lifted clear of it rather than landing on top.
+ */
+const EDGE_REMOTE_BADGE_OFFSET_Y = 26
 /** Wide, invisible hit area so edges are easy to hover/click without looking thick. */
 const EDGE_INTERACTION_WIDTH = 22
 /** Stroke opacity at rest vs. when the edge is hovered or selected. */
@@ -64,7 +73,14 @@ export function CanvasEdgeRenderer({
   const [draft, setDraft] = useState(label)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const active = Boolean(selected) || hovered
+  // Another participant's selection takes over the stroke color and adds a name
+  // badge, so it's obvious both that the edge is claimed and by whom — the color
+  // matches that person's cursor, and the badge names them outright.
+  const remoteSelectors = useRemoteEdgeSelectors(id)
+  const remoteOwner = remoteSelectors?.[0]
+  const remoteExtra = (remoteSelectors?.length ?? 0) - 1
+
+  const active = Boolean(selected) || hovered || Boolean(remoteOwner)
 
   const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
@@ -117,11 +133,11 @@ export function CanvasEdgeRenderer({
         markerEnd={markerEnd}
         interactionWidth={0}
         style={{
-          stroke: CANVAS_EDGE_COLOR,
-          strokeWidth: EDGE_STROKE_WIDTH,
+          stroke: remoteOwner?.color ?? CANVAS_EDGE_COLOR,
+          strokeWidth: remoteOwner ? EDGE_STROKE_WIDTH_REMOTE : EDGE_STROKE_WIDTH,
           strokeLinecap: "round",
           strokeOpacity: active ? EDGE_OPACITY_ACTIVE : EDGE_OPACITY_REST,
-          transition: "stroke-opacity 150ms ease",
+          transition: "stroke-opacity 150ms ease, stroke 150ms ease",
         }}
       />
       {/* Wide invisible hit area: `pointerEvents: stroke` makes the transparent
@@ -136,6 +152,25 @@ export function CanvasEdgeRenderer({
         onMouseLeave={() => setHovered(false)}
         onDoubleClick={startEditing}
       />
+      {remoteOwner && (
+        <EdgeLabelRenderer>
+          {/* Names whoever has the edge selected, mirroring the badge on a
+           * remotely-selected node. Non-interactive so it never steals the
+           * edge's own hover, click, or double-click-to-label behavior. */}
+          <div
+            aria-hidden
+            className="nodrag nopan pointer-events-none absolute rounded px-1.5 py-0.5 text-[10px] font-medium whitespace-nowrap shadow-sm select-none"
+            style={{
+              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY - EDGE_REMOTE_BADGE_OFFSET_Y}px)`,
+              backgroundColor: remoteOwner.color,
+              color: "var(--bg-base)",
+            }}
+          >
+            {remoteOwner.name}
+            {remoteExtra > 0 && ` +${remoteExtra}`}
+          </div>
+        </EdgeLabelRenderer>
+      )}
       {showLabel && (
         <EdgeLabelRenderer>
           <div

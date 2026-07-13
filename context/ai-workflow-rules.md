@@ -4,6 +4,14 @@
 
 Build this project incrementally using a spec-driven workflow. Context files define what to build, how to build it, and what the current state of progress is. Always implement against these specs — do not infer or invent behavior from scratch.
 
+## Spec Structure
+
+Every file in `context/feature-specs/` follows the structure defined in `context/feature-specs/_TEMPLATE.md`. Read it before writing a new spec.
+
+Required sections: a summary, `## Implementation`, `## Scope Limits`, and `## Check When Done`. `## Dependencies`, `## UI Details`, and `## Notes` are added only when the unit calls for them.
+
+Specs describe behavior, not code. Every `## Check When Done` line must be independently verifiable, and the last one is always the build check.
+
 ## Scoping Rules
 
 - Work on one feature unit or subsystem at a time.

@@ -36,7 +36,7 @@ Implement the full AI design agent so a user prompt results in real-time updates
 
 ## Dependencies
 
-All packages are already installed.`GOOGLE_AI_API_KEY` is already in `.env.local`.
+All packages are already installed.`OPENAI_API_KEY` is already in `.env.local`.
 
 ## Scope Limits
 

@@ -21,6 +21,7 @@ import type { CanvasNode } from "@/types/canvas"
 import { useCanvasActions } from "./canvas-context"
 import { NodeColorToolbar } from "./node-color-toolbar"
 import { NodeShape } from "./node-shape"
+import { useRemoteNodeSelectors } from "./remote-selection-context"
 
 /** Smallest footprint a node can be resized to. */
 const MIN_NODE_WIDTH = 80
@@ -53,6 +54,11 @@ export function CanvasNodeRenderer({ id, data, selected }: NodeProps<CanvasNode>
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(data.label)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Who else has this node selected right now (empty for everyone but them).
+  const remoteSelectors = useRemoteNodeSelectors(id)
+  const remoteOwner = remoteSelectors?.[0]
+  const remoteExtra = (remoteSelectors?.length ?? 0) - 1
 
   const startEditing = (event: MouseEvent) => {
     // Stop the double-click from reaching React Flow's zoom-on-double-click.
@@ -115,6 +121,31 @@ export function CanvasNodeRenderer({ id, data, selected }: NodeProps<CanvasNode>
         handleStyle={{ width: 8, height: 8, borderRadius: 2 }}
       />
       <NodeShape shape={data.shape} color={data.color} selected={selected} />
+      {/* Another participant's selection, tinted with their presence color. Drawn
+       * as a bounding box (rather than tracing the shape) so it reads the same on
+       * every shape and matches the box the resizer already uses. Sits above the
+       * shape but stays non-interactive so it never blocks editing or dragging. */}
+      {remoteOwner && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-md"
+          style={{
+            outline: `2px solid ${remoteOwner.color}`,
+            outlineOffset: "2px",
+          }}
+        >
+          <span
+            className="absolute -top-6 left-0 rounded px-1.5 py-0.5 text-[10px] font-medium whitespace-nowrap shadow-sm select-none"
+            style={{
+              backgroundColor: remoteOwner.color,
+              color: "var(--bg-base)",
+            }}
+          >
+            {remoteOwner.name}
+            {remoteExtra > 0 && ` +${remoteExtra}`}
+          </span>
+        </div>
+      )}
       {/* One handle per side; `ConnectionMode.Loose` lets any side connect to any
        * other. Position-based ids keep the four same-type handles unambiguous so
        * edges route from the correct side. */}

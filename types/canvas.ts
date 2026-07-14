@@ -82,6 +82,41 @@ export const NODE_SHAPES: readonly NodeShapeDefinition[] = [
   { shape: "hexagon", label: "Hexagon", defaultSize: { width: 150, height: 100 } },
 ] as const
 
+/**
+ * Shape definitions keyed by shape name, so a shape *tool* — which carries only
+ * the name — can resolve the footprint to place at. Derived from `NODE_SHAPES`
+ * so the sizes above stay the single source of truth.
+ */
+export const NODE_SHAPE_BY_NAME = Object.fromEntries(
+  NODE_SHAPES.map((definition) => [definition.shape, definition])
+) as Record<CanvasNodeShape, NodeShapeDefinition>
+
+/** A canvas tool that owns the cursor without creating anything. */
+export type CanvasCursorTool = "select" | "hand"
+
+/** The two cursor tools, in toolbar order, ahead of the six shape tools. */
+export const CANVAS_CURSOR_TOOLS: readonly CanvasCursorTool[] = [
+  "select",
+  "hand",
+] as const
+
+/**
+ * The canvas tool mode. Exactly one tool is active at all times — there is no
+ * "no tool" state — and the active tool owns the cursor and decides what a click
+ * and a drag on the canvas mean.
+ */
+export type CanvasTool = CanvasCursorTool | CanvasNodeShape
+
+/** Tool the canvas loads in, and returns to after a shape is placed. */
+export const DEFAULT_CANVAS_TOOL: CanvasTool = "select"
+
+const SHAPE_TOOLS = new Set<CanvasTool>(NODE_SHAPES.map(({ shape }) => shape))
+
+/** True when the active tool places a node of that shape on the next canvas click. */
+export function isShapeTool(tool: CanvasTool): tool is CanvasNodeShape {
+  return SHAPE_TOOLS.has(tool)
+}
+
 /** `dataTransfer` payload carried while dragging a shape onto the canvas. */
 export interface ShapeDragPayload {
   shape: CanvasNodeShape

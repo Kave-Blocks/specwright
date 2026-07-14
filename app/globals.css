@@ -153,3 +153,40 @@
     @apply font-sans;
     }
 }
+
+/*
+ * Canvas tool cursors — the active tool owns the cursor.
+ * `data-canvas-tool` is set on the canvas wrapper by `CanvasFlow`.
+ *
+ * These target the React Flow *pane* (the empty canvas surface), not the whole
+ * wrapper, for two reasons. First, a node handle keeps React Flow's own
+ * `.react-flow__handle.connectionindicator { cursor: crosshair }` — so hovering a
+ * shape edge where a connector can start still shows the connector cursor. The
+ * hand tool is the one exception, and it needs no rule here: it turns
+ * `nodesConnectable` off, which drops that very class (and with it the handle's
+ * `pointer-events`), so the handle stops being a hit target and the open hand below
+ * simply shows through. Second, they have to out-specify React Flow's
+ * `.react-flow__pane.draggable { cursor: grab }` (0,2,0), which is why the hand
+ * and shape rules carry the wrapper's attribute *and* the pane's state class
+ * (0,3,0) rather than being a Tailwind `cursor-*` utility on the wrapper.
+ *
+ * `select` is the exception, and deliberately so: it turns `panOnDrag` off (its
+ * empty-canvas drag draws the marquee), so React Flow stops marking the pane
+ * `.draggable` at all and there is no `grab` cursor left to beat — the bare pane
+ * (0,2,0) is enough, and nothing else in React Flow sets a cursor on it.
+ *
+ * `.dragging` follows `.draggable` because the two tie on specificity and both
+ * apply while panning — source order is what makes the hand close.
+ */
+[data-canvas-tool="select"] .react-flow__pane {
+  cursor: default;
+}
+[data-canvas-tool="shape"] .react-flow__pane.draggable {
+  cursor: crosshair;
+}
+[data-canvas-tool="hand"] .react-flow__pane.draggable {
+  cursor: grab;
+}
+[data-canvas-tool="hand"] .react-flow__pane.dragging {
+  cursor: grabbing;
+}

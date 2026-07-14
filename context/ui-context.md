@@ -84,6 +84,33 @@ Smooth-step path with an arrow marker. Default edge color: `#f8fafc`. Stroke wid
 - `cylinder` — database / storage
 - `hexagon` — external system / boundary
 
+### Tool Modes
+
+The canvas has one active tool at all times (default `select`); it owns the cursor and decides what a click means. Two floating pill bars sit at the bottom of the canvas:
+
+- **Left (`CanvasControls`)** — zoom out, fit, zoom in, divider, undo, redo. These do *not* own the cursor, which is why they are their own group and sit outside the tool system.
+- **Center (`ToolPanel`)** — the eight tools, all of which own the cursor: select, hand, divider, then the six shapes.
+
+The active tool is filled with the brand accent (`bg-accent-dim text-brand`), distinct from both rest (`text-copy-muted`) and hover (`bg-elevated`). Shape buttons do double duty: clicking one activates that shape tool (the next canvas click places the shape, then the tool returns to `select`), while dragging one still drops a node without changing the active tool.
+
+**Hold-space** makes `hand` the active tool for as long as the key is down, from any tool, and releasing it returns to the tool underneath — including a shape tool. It is a real change of the active tool, not a panning special case, so the toolbar shows `hand` as active and the cursor changes with it. Space is ignored while a text field has focus, and ignored mid-gesture (mid-marquee, mid-move, mid-connector), which completes as it would have.
+
+Cursors are driven by `data-canvas-tool` on the canvas wrapper, with rules in `globals.css`: arrow for `select`, open/closed hand for `hand`, crosshair for any shape tool. They target the React Flow *pane*, so a node handle keeps its connector crosshair — except under `hand`, which gives up connectors entirely, leaving the handle non-interactive and the open hand showing through.
+
+### Selection
+
+Selection belongs to the `select` tool: click a shape to select it, shift-click to add or remove one, drag a shape to move it, drag a handle to resize, Delete/Backspace to remove. Under any other tool these all go quiet — the selection itself survives the switch, it just stops responding, and a selected node's resize handles are withheld rather than shown dead.
+
+Selected shapes keep their existing treatment: the shape border brightens to `--accent-primary`, and a `NodeResizer` in the same color adds corner/edge handles.
+
+**Marquee.** Dragging from empty canvas draws a selection rectangle; every shape it *touches* (not merely contains) highlights as it grows and is selected on release. Holding shift adds the result to the existing selection. A drag under 4px stays a click and clears the selection instead; `Esc` mid-drag cancels and leaves the prior selection intact.
+
+The rectangle is a translucent brand fill (`bg-accent-dim`) with a 1px border in the selection outline color (`border-brand`) — so it reads as "this is what will be selected". It draws above the shapes and below the toolbars.
+
+Panning moved out of the empty-canvas drag to make room for the marquee: scroll and trackpad pan the canvas (pinch and Cmd/Ctrl + scroll still zoom), while drag-to-pan belongs to the `hand` tool — reachable from anywhere by holding space.
+
+**Hand.** Every drag pans, wherever it lands: on empty canvas, on a shape, on an edge. Nothing is selected, moved, resized, deleted, or edited while it is active, and a shape's edge no longer starts a connector — that is the one gesture the hand tool takes away that the shape tools keep. The existing selection stays selected and stays outlined throughout; it simply stops responding.
+
 ### Connection Handles
 
 Small white circular handles, hidden by default, revealed on node hover. Appear at all four sides of a node.

@@ -3,23 +3,8 @@
 import { useEffect, useRef } from "react"
 import { useEdges, useNodes, type OnDelete } from "@xyflow/react"
 
+import { isEditableTarget } from "@/lib/editable-target"
 import type { CanvasEdge, CanvasNode } from "@/types/canvas"
-
-/**
- * True when a key event originates from a field the user is typing into (input,
- * textarea, select, or any contentEditable element), so a node/edge delete never
- * fires while editing a label.
- */
-function isEditableTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false
-  const tag = target.tagName
-  return (
-    tag === "INPUT" ||
-    tag === "TEXTAREA" ||
-    tag === "SELECT" ||
-    target.isContentEditable
-  )
-}
 
 /**
  * Deletes the currently selected nodes and edges on Delete / Backspace, routing
@@ -28,19 +13,24 @@ function isEditableTarget(target: EventTarget | null): boolean {
  * disabled at the call site (`deleteKeyCode={null}`), making this the single
  * deletion path — all deletions go through the collaborative state.
  *
+ * Deleting is one of the select tool's gestures: pass `enabled: false` while any
+ * other tool owns the canvas and the keys do nothing, even though the selection
+ * itself survives the tool switch.
+ *
  * Selection is read from React Flow's store via `useNodes`/`useEdges`; the latest
  * values are held in a ref so the `window` listener is bound only once rather
  * than re-attached on every node/edge change.
  */
 export function useCanvasDeleteKeys(
-  onDelete: OnDelete<CanvasNode, CanvasEdge>
+  onDelete: OnDelete<CanvasNode, CanvasEdge>,
+  enabled: boolean
 ): void {
   const nodes = useNodes<CanvasNode>()
   const edges = useEdges<CanvasEdge>()
 
-  const latest = useRef({ nodes, edges, onDelete })
+  const latest = useRef({ nodes, edges, onDelete, enabled })
   useEffect(() => {
-    latest.current = { nodes, edges, onDelete }
+    latest.current = { nodes, edges, onDelete, enabled }
   })
 
   useEffect(() => {
@@ -48,7 +38,9 @@ export function useCanvasDeleteKeys(
       if (event.key !== "Delete" && event.key !== "Backspace") return
       if (isEditableTarget(event.target)) return
 
-      const { nodes, edges, onDelete } = latest.current
+      const { nodes, edges, onDelete, enabled } = latest.current
+      if (!enabled) return
+
       const selectedNodes = nodes.filter((node) => node.selected)
       const selectedEdges = edges.filter((edge) => edge.selected)
       if (selectedNodes.length === 0 && selectedEdges.length === 0) return

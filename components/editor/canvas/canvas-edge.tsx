@@ -18,6 +18,7 @@ import {
 import { CANVAS_EDGE_COLOR, type CanvasEdge } from "@/types/canvas"
 
 import { useCanvasActions } from "./canvas-context"
+import { useActiveCanvasTool } from "./canvas-tool-context"
 import { useRemoteEdgeSelectors } from "./remote-selection-context"
 
 /** Corner rounding of the right-angle routing. */
@@ -52,6 +53,14 @@ const LABEL_PLACEHOLDER = "Add label"
  * live (blur, Enter, or Escape close the editor); saved labels render as small
  * pill badges, and an active unlabeled edge shows a faint hint. Label interactions
  * carry `nodrag`/`nopan` so they never drag a node or pan the canvas.
+ *
+ * Under the hand tool the whole edge goes non-interactive — hit path and label
+ * alike — so a drag that lands on an edge pans like any other, the cursor stays an
+ * open hand rather than the edge's pointer, and a labeled edge is still drawn but
+ * can no longer be edited. React Flow marks a non-selectable edge `inactive`, but
+ * that only sets `pointer-events: none` on the group: both the hit path and the
+ * label re-enable pointer events inline (they have to, to be hoverable at all), and
+ * an inline rule on a descendant wins. So the tool has to be read here.
  */
 export function CanvasEdgeRenderer({
   id,
@@ -68,6 +77,9 @@ export function CanvasEdgeRenderer({
   const { updateEdgeLabel } = useCanvasActions()
   const label = data?.label ?? ""
 
+  // Every drag belongs to the hand tool, so the edge stops answering the pointer.
+  const isHandTool = useActiveCanvasTool() === "hand"
+
   const [hovered, setHovered] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(label)
@@ -80,7 +92,12 @@ export function CanvasEdgeRenderer({
   const remoteOwner = remoteSelectors?.[0]
   const remoteExtra = (remoteSelectors?.length ?? 0) - 1
 
-  const active = Boolean(selected) || hovered || Boolean(remoteOwner)
+  // The hand tool is the authority on its own hover, rather than the flag: a hit path
+  // that stops taking pointer events is hit-tested out from under the pointer, so the
+  // hover it was holding when the tool changed would light the edge for a frame — and
+  // for as long as the pointer then stayed still.
+  const active =
+    Boolean(selected) || (hovered && !isHandTool) || Boolean(remoteOwner)
 
   const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
@@ -141,13 +158,18 @@ export function CanvasEdgeRenderer({
         }}
       />
       {/* Wide invisible hit area: `pointerEvents: stroke` makes the transparent
-       * stroke hittable so hover/double-click work without a visible thick line. */}
+       * stroke hittable so hover/double-click work without a visible thick line.
+       * Switched off under the hand tool, which hands the drag — and the cursor —
+       * straight through to the pane behind it. */}
       <path
         d={edgePath}
         fill="none"
         stroke="transparent"
         strokeWidth={EDGE_INTERACTION_WIDTH}
-        style={{ pointerEvents: "stroke", cursor: "pointer" }}
+        style={{
+          pointerEvents: isHandTool ? "none" : "stroke",
+          cursor: "pointer",
+        }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         onDoubleClick={startEditing}
@@ -173,11 +195,15 @@ export function CanvasEdgeRenderer({
       )}
       {showLabel && (
         <EdgeLabelRenderer>
+          {/* The label keeps rendering under the hand tool — a labeled edge still
+           * reads as labeled — but stops taking the pointer, so it can't be edited
+           * and, because its `pointerdown` guard goes with it, pressing on a label
+           * pans the canvas instead of swallowing the drag. */}
           <div
             className="nodrag nopan absolute"
             style={{
               transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
-              pointerEvents: "all",
+              pointerEvents: isHandTool ? "none" : "all",
             }}
             onDoubleClick={startEditing}
             onClick={(event) => event.stopPropagation()}

@@ -31,17 +31,23 @@ import { StarterTemplatesModal } from "@/components/editor/starter-templates-mod
 import { useStarterTemplates } from "@/components/editor/starter-templates-context"
 import { useCanvasAutosave } from "@/hooks/use-canvas-autosave"
 import { useCanvasDeleteKeys } from "@/hooks/use-canvas-delete-keys"
+import { useCanvasMarquee } from "@/hooks/use-canvas-marquee"
+import { useCanvasTool } from "@/hooks/use-canvas-tool"
 import { ZOOM_DURATION } from "@/hooks/useKeyboardShortcuts"
 import { createCanvasEdge } from "@/lib/canvas-edge"
 import { createCanvasNode } from "@/lib/canvas-node"
 import {
   CANVAS_EDGE_TYPE,
   CANVAS_NODE_TYPE,
+  DEFAULT_CANVAS_TOOL,
   DEFAULT_EDGE_OPTIONS,
+  NODE_SHAPE_BY_NAME,
   SHAPE_DRAG_MIME,
+  isShapeTool,
   type CanvasEdge,
   type CanvasNode,
   type CanvasSnapshot,
+  type CanvasTool,
   type ShapeDragPayload,
 } from "@/types/canvas"
 
@@ -50,13 +56,14 @@ import { CanvasEdgeRenderer } from "./canvas-edge"
 import { CanvasActionsProvider } from "./canvas-context"
 import { useCanvasGraph } from "./canvas-graph-context"
 import { useCanvasSave } from "./canvas-save-context"
+import { CanvasToolProvider } from "./canvas-tool-context"
 import { AiActivityBridge } from "./ai-activity-bridge"
 import { AiStatusFeed } from "./ai-status-feed"
 import { CanvasControls } from "./canvas-controls"
 import { LiveCursors } from "./live-cursors"
 import { PresenceAvatars } from "./presence-avatars"
 import { RemoteSelectionProvider } from "./remote-selection-context"
-import { ShapePanel } from "./shape-panel"
+import { ToolPanel } from "./tool-panel"
 
 import "@xyflow/react/dist/style.css"
 import "@liveblocks/react-flow/styles.css"
@@ -78,6 +85,15 @@ export function Canvas({ projectId }: { projectId: string }) {
   )
 }
 
+/**
+ * The cursor a tool asks for. Eight tools, three cursors: all six shape tools
+ * share the crosshair, so the CSS keys off the cursor rather than off the tool.
+ */
+function cursorGroup(tool: CanvasTool): "select" | "hand" | "shape" {
+  if (isShapeTool(tool)) return "shape"
+  return tool
+}
+
 function CanvasFlow({ projectId }: { projectId: string }) {
   const { nodes, edges, onNodesChange, onEdgesChange, onDelete } =
     useLiveblocksFlow<CanvasNode, CanvasEdge>({
@@ -93,6 +109,31 @@ function CanvasFlow({ projectId }: { projectId: string }) {
     useStarterTemplates()
   const { setStatus, saveNowRef } = useCanvasSave()
 
+  // Marquee selection: a drag from empty canvas draws a rectangle and selects every
+  // shape it touches. Built before the tool hook, which is handed its `cancelMarquee`
+  // so `Esc` — and any other tool switch — abandons a marquee mid-drag.
+  const {
+    rect: marqueeRect,
+    onPointerDownCapture: onMarqueePointerDown,
+    onClickCapture: onMarqueeClickCapture,
+    cancelMarquee,
+  } = useCanvasMarquee(onNodesChange, onEdgesChange)
+
+  // The one active tool: it owns the canvas cursor and decides what a click on
+  // the pane means. Also binds the V / H / R / Esc shortcuts.
+  const { activeTool, selectTool } = useCanvasTool(cancelMarquee)
+
+  // The select tool owns selection, move, resize, delete, and the marquee. Every one
+  // of those gestures goes quiet while another tool owns the canvas — the existing
+  // selection survives the switch, it just stops responding.
+  const isSelectTool = activeTool === "select"
+
+  // The hand tool owns the drag: every drag pans, wherever it starts. It is the one
+  // tool that also gives up *connectors*, so that dragging off a shape's edge pans
+  // rather than pulling a connection out of it. `hand` is also what hold-space
+  // activates, so all of this holds for the duration of the key too.
+  const isHandTool = activeTool === "hand"
+
   // Keep the sidebar's view of the graph current, so "Generate Spec" describes
   // the canvas as it stands. A ref, not state: this changes on every drag, and
   // nothing renders from it (see `canvas-graph-context.ts`).
@@ -103,8 +144,8 @@ function CanvasFlow({ projectId }: { projectId: string }) {
 
   // Delete / Backspace removes the selected nodes and edges through the shared
   // Liveblocks state so it syncs to everyone (RF's own keyboard deletion is
-  // disabled via `deleteKeyCode={null}` below).
-  useCanvasDeleteKeys(onDelete)
+  // disabled via `deleteKeyCode={null}` below), and only while `select` is active.
+  useCanvasDeleteKeys(onDelete, isSelectTool)
 
   // Gate autosave until the initial load decision is made, so loading saved
   // state (or the empty starting graph) never triggers a save on its own.
@@ -306,6 +347,68 @@ function CanvasFlow({ projectId }: { projectId: string }) {
     [onNodesChange, screenToFlowPosition]
   )
 
+  // While a shape tool is active, a click on the canvas places that shape and the
+  // canvas returns to `select`. The node is centered on the click point, the same
+  // hotspot the drag-and-drop path above uses, so both feel identical.
+  //
+  // `selected: true` is what makes the placed shape the selection. It is safe to
+  // set here because `selected` is local-only in the Liveblocks node config — it
+  // never reaches Storage, so this selects the node for the person who placed it
+  // and for nobody else, exactly as clicking it would.
+  //
+  // Clearing the *previous* selection is done here, explicitly, rather than left to
+  // React Flow's pane-click reset. That reset is a no-op while a shape tool is active
+  // — nothing is selectable then, deliberately, so that clicking a shape under a shape
+  // tool cannot select it — and leaning on it would leave every shape placed in a row
+  // selected together.
+  const handlePaneClick = useCallback(
+    (event: MouseEvent) => {
+      if (!isShapeTool(activeTool)) return
+
+      const { defaultSize } = NODE_SHAPE_BY_NAME[activeTool]
+      const point = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      })
+      const node = createCanvasNode(activeTool, defaultSize, {
+        x: point.x - defaultSize.width / 2,
+        y: point.y - defaultSize.height / 2,
+      })
+
+      onNodesChange([
+        ...nodes
+          .filter((current) => current.selected)
+          .map((current) => ({
+            id: current.id,
+            type: "select" as const,
+            selected: false,
+          })),
+        { type: "add", item: { ...node, selected: true } },
+      ])
+      const selectedEdges = edges.filter((edge) => edge.selected)
+      if (selectedEdges.length > 0) {
+        onEdgesChange(
+          selectedEdges.map((edge) => ({
+            id: edge.id,
+            type: "select" as const,
+            selected: false,
+          }))
+        )
+      }
+
+      selectTool(DEFAULT_CANVAS_TOOL)
+    },
+    [
+      activeTool,
+      edges,
+      nodes,
+      onEdgesChange,
+      onNodesChange,
+      screenToFlowPosition,
+      selectTool,
+    ]
+  )
+
   // Broadcast the local cursor as flow coordinates so it stays anchored to the
   // canvas content for every viewer regardless of their pan/zoom. Cleared to
   // null when the pointer leaves the canvas so stale cursors don't linger.
@@ -380,43 +483,116 @@ function CanvasFlow({ projectId }: { projectId: string }) {
   return (
     <div
       className="relative h-full w-full"
+      // The active tool owns the canvas cursor: arrow for `select`, an open (and
+      // while panning, closed) hand for `hand`, a crosshair for any shape tool.
+      // Driven from CSS in `globals.css` rather than a Tailwind class, because the
+      // rule has to out-specify React Flow's own `.react-flow__pane.draggable`
+      // cursor — and because scoping it to the *pane* is what leaves the connector
+      // crosshair on a node handle intact, whatever the active tool is.
+      data-canvas-tool={cursorGroup(activeTool)}
       onDragOver={onDragOver}
       onDrop={onDrop}
+      // A drag on empty canvas only means "marquee" under `select`; every other tool
+      // declines the gesture simply by not arming it. The click guard stays wired up
+      // regardless, so a marquee abandoned by a mid-drag tool switch still swallows
+      // the click its release leaves behind.
+      onPointerDownCapture={isSelectTool ? onMarqueePointerDown : undefined}
+      onClickCapture={onMarqueeClickCapture}
     >
-      <CanvasActionsProvider value={canvasActions}>
-        {/* Wraps the flow so node and edge renderers can show who else has them
-         * selected, from a single shared presence subscription. */}
-        <RemoteSelectionProvider>
-          <ReactFlow<CanvasNode, CanvasEdge>
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={handleConnect}
-            onDelete={onDelete}
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
-            onSelectionChange={handleSelectionChange}
-            connectionMode={ConnectionMode.Loose}
-            colorMode="dark"
-            deleteKeyCode={null}
-          >
-            {/* Colors are raw strings because React Flow props can't take Tailwind
-             * tokens; values mirror the ui-context palette (base/surface/border). */}
-            <Background variant={BackgroundVariant.Dots} color="#2a2a30" />
-            <LiveCursors />
-          </ReactFlow>
-        </RemoteSelectionProvider>
-      </CanvasActionsProvider>
+      {/* Publishes the active tool to the renderers inside the flow — a node's resize
+       * handles are a select-tool gesture and go quiet under any other tool. */}
+      <CanvasToolProvider value={activeTool}>
+        <CanvasActionsProvider value={canvasActions}>
+          {/* Wraps the flow so node and edge renderers can show who else has them
+           * selected, from a single shared presence subscription. */}
+          <RemoteSelectionProvider>
+            <ReactFlow<CanvasNode, CanvasEdge>
+              nodes={nodes}
+              edges={edges}
+              nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
+              defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={handleConnect}
+              onDelete={onDelete}
+              onPaneClick={handlePaneClick}
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
+              onSelectionChange={handleSelectionChange}
+              connectionMode={ConnectionMode.Loose}
+              colorMode="dark"
+              deleteKeyCode={null}
+              // Selecting, moving and resizing belong to the select tool. Turning both
+              // off elsewhere is also what keeps the current selection alive across a
+              // tool switch: React Flow's `resetSelectedElements` is a no-op while
+              // nothing is selectable, so a pane click under another tool cannot clear
+              // it. Connecting is left on throughout — creating a connector from a
+              // shape edge is unaffected by the active tool.
+              elementsSelectable={isSelectTool}
+              nodesDraggable={isSelectTool}
+              // Connectors are the last thing a node still answers to, and the hand
+              // tool gives them up as well: every other tool keeps them (a shape tool
+              // can still pull an edge out of a shape), but under `hand` a drag off a
+              // shape's edge has to pan. Turning this off is also what silences the
+              // connector *cursor* on a handle — React Flow only marks a handle
+              // `connectionindicator` (the class carrying `pointer-events: all` and
+              // `cursor: crosshair`) while its node is connectable, so with it off the
+              // handle stops being a hit target and the pane's open hand shows through.
+              nodesConnectable={!isHandTool}
+              // Under `select`, dragging the empty canvas draws the marquee instead of
+              // panning; every other tool keeps the drag-to-pan it already had. That
+              // trade is what makes the marquee possible at all, so panning moves to
+              // the hand tool and to scroll.
+              panOnDrag={!isSelectTool}
+              // React Flow binds space to pan on its own (`panActivationKeyCode`
+              // defaults to `'Space'`, OR-ed into `panOnDrag`), and that has to go:
+              // hold-space is a *tool* switch here, so the toolbar, the cursor and
+              // every gesture gate follow from it. Left on, the two would disagree —
+              // React Flow would happily pan on a space-held drag under `select` while
+              // the tool state still said `select`, and the marquee would draw at the
+              // same time. `useCanvasTool` is the one owner of space.
+              panActivationKeyCode={null}
+              // Scroll and trackpad now pan rather than zoom, which is what keeps the
+              // canvas navigable once `select` gives up drag-to-pan. Pinch and the zoom
+              // activation key (Cmd/Ctrl + scroll) still zoom.
+              panOnScroll
+              // React Flow's own shift-drag marquee is off: shift is the *add to
+              // selection* modifier here, for both a click and a marquee, and leaving
+              // its marquee bound to shift would swallow the shift-click on a shape
+              // before it ever reached the node.
+              selectionKeyCode={null}
+              multiSelectionKeyCode="Shift"
+            >
+              {/* Colors are raw strings because React Flow props can't take Tailwind
+               * tokens; values mirror the ui-context palette (base/surface/border). */}
+              <Background variant={BackgroundVariant.Dots} color="#2a2a30" />
+              <LiveCursors />
+            </ReactFlow>
+          </RemoteSelectionProvider>
+        </CanvasActionsProvider>
+      </CanvasToolProvider>
+      {/* The marquee. Above the shapes, and below the toolbars — they carry the same
+       * `z-10` and come after it in source. A translucent brand fill bordered in the
+       * selection outline color, so it reads as "this is what will be selected". */}
+      {marqueeRect && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute z-10 border border-brand bg-accent-dim"
+          style={{
+            left: marqueeRect.x,
+            top: marqueeRect.y,
+            width: marqueeRect.width,
+            height: marqueeRect.height,
+          }}
+        />
+      )}
       {/* Reports shared AI status/presence up to the sidebar (outside the room). */}
       <AiActivityBridge />
       <AiStatusFeed />
       <PresenceAvatars />
       <CanvasControls />
-      <ShapePanel />
+      <ToolPanel activeTool={activeTool} onSelectTool={selectTool} />
       <StarterTemplatesModal
         open={isTemplatesOpen}
         onOpenChange={setTemplatesOpen}

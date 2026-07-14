@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils"
 import type { CanvasNode } from "@/types/canvas"
 
 import { useCanvasActions } from "./canvas-context"
+import { useActiveCanvasTool } from "./canvas-tool-context"
 import { NodeColorToolbar } from "./node-color-toolbar"
 import { NodeShape } from "./node-shape"
 import { useRemoteNodeSelectors } from "./remote-selection-context"
@@ -44,13 +45,28 @@ const LABEL_PLACEHOLDER = "Add label"
  * and brightens its border when selected. The label is centered on top and
  * connection handles sit on all four sides so nodes can be linked.
  *
- * When selected, a `NodeResizer` shows subtle corner/edge handles that resize
- * the node (down to a minimum) through the synced node-change flow. Double-
- * clicking opens an inline `<textarea>` layered directly over the label; typing
- * commits to the collaborative state live, and blur or `Escape` closes editing.
+ * When selected *and* the select tool owns the canvas, a `NodeResizer` shows subtle
+ * corner/edge handles that resize the node (down to a minimum) through the synced
+ * node-change flow. Resizing is a select-tool gesture, so under the hand or a shape
+ * tool the handles are withheld rather than shown but dead — the node keeps its
+ * selection outline, whose appearance is unchanged either way. Double-clicking opens
+ * an inline `<textarea>` layered directly over the label; typing commits to the
+ * collaborative state live, and blur or `Escape` closes editing.
+ *
+ * `isConnectable` has to be forwarded to every `Handle` by hand. React Flow resolves
+ * it per node (from the `nodesConnectable` prop) and hands it to the node renderer —
+ * but `Handle` itself never reads the store, and *defaults its own `isConnectable` to
+ * `true`*. So a handle left to itself stays connectable no matter what the flow says,
+ * and the hand tool's `nodesConnectable={false}` would silently do nothing here.
  */
-export function CanvasNodeRenderer({ id, data, selected }: NodeProps<CanvasNode>) {
+export function CanvasNodeRenderer({
+  id,
+  data,
+  selected,
+  isConnectable,
+}: NodeProps<CanvasNode>) {
   const { updateNodeLabel, updateNodeColor } = useCanvasActions()
+  const isSelectTool = useActiveCanvasTool() === "select"
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(data.label)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -114,7 +130,7 @@ export function CanvasNodeRenderer({ id, data, selected }: NodeProps<CanvasNode>
         />
       )}
       <NodeResizer
-        isVisible={selected}
+        isVisible={selected && isSelectTool}
         minWidth={MIN_NODE_WIDTH}
         minHeight={MIN_NODE_HEIGHT}
         color="var(--accent-primary)"
@@ -148,11 +164,39 @@ export function CanvasNodeRenderer({ id, data, selected }: NodeProps<CanvasNode>
       )}
       {/* One handle per side; `ConnectionMode.Loose` lets any side connect to any
        * other. Position-based ids keep the four same-type handles unambiguous so
-       * edges route from the correct side. */}
-      <Handle id="top" type="source" position={Position.Top} className={handleClass} />
-      <Handle id="right" type="source" position={Position.Right} className={handleClass} />
-      <Handle id="bottom" type="source" position={Position.Bottom} className={handleClass} />
-      <Handle id="left" type="source" position={Position.Left} className={handleClass} />
+       * edges route from the correct side. `isConnectable` is what the hand tool
+       * turns off: a non-connectable handle drops React Flow's `connectionindicator`
+       * class, and with it the `pointer-events: all` that makes the handle a hit
+       * target at all — so under `hand` a drag off a shape's edge pans instead of
+       * pulling a connector out of it. */}
+      <Handle
+        id="top"
+        type="source"
+        position={Position.Top}
+        isConnectable={isConnectable}
+        className={handleClass}
+      />
+      <Handle
+        id="right"
+        type="source"
+        position={Position.Right}
+        isConnectable={isConnectable}
+        className={handleClass}
+      />
+      <Handle
+        id="bottom"
+        type="source"
+        position={Position.Bottom}
+        isConnectable={isConnectable}
+        className={handleClass}
+      />
+      <Handle
+        id="left"
+        type="source"
+        position={Position.Left}
+        isConnectable={isConnectable}
+        className={handleClass}
+      />
       <div className="absolute inset-0 flex items-center justify-center px-3">
         {isEditing ? (
           <textarea

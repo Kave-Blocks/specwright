@@ -5,23 +5,29 @@ import {
   Circle,
   Cylinder,
   Diamond,
+  Hand,
   Hexagon,
+  MousePointer2,
   Pill,
   RectangleHorizontal,
   type LucideIcon,
 } from "lucide-react"
 
+import { cn } from "@/lib/utils"
 import {
+  CANVAS_CURSOR_TOOLS,
   DEFAULT_NODE_COLOR,
   NODE_SHAPES,
   SHAPE_DRAG_MIME,
+  type CanvasCursorTool,
   type CanvasNodeShape,
+  type CanvasTool,
   type ShapeDragPayload,
 } from "@/types/canvas"
 
 import { NodeShape } from "./node-shape"
 
-/** Icon shown for each draggable shape. */
+/** Icon shown for each shape tool. */
 const SHAPE_ICONS: Record<CanvasNodeShape, LucideIcon> = {
   rectangle: RectangleHorizontal,
   diamond: Diamond,
@@ -31,14 +37,56 @@ const SHAPE_ICONS: Record<CanvasNodeShape, LucideIcon> = {
   hexagon: Hexagon,
 }
 
+/** Icon, name, and shortcut for each cursor tool. */
+const CURSOR_TOOLS: Record<
+  CanvasCursorTool,
+  { icon: LucideIcon; label: string; shortcut: string }
+> = {
+  select: { icon: MousePointer2, label: "Select", shortcut: "V" },
+  hand: { icon: Hand, label: "Hand", shortcut: "H" },
+}
+
+/** Keyboard shortcut per shape tool; only the rectangle has one (spec 30). */
+const SHAPE_SHORTCUTS: Partial<Record<CanvasNodeShape, string>> = {
+  rectangle: "R",
+}
+
+/** Tooltip text: the tool's name, plus its shortcut when it has one. */
+function tooltip(label: string, shortcut?: string): string {
+  return shortcut ? `${label} (${shortcut})` : label
+}
+
 /**
- * Floating pill-shaped toolbar at the bottom-center of the canvas. Each button
- * is draggable; dragging one starts a drag carrying the shape name and its
- * default size, which the canvas reads on drop to create a new node. While
+ * Shared button treatment for every tool in the panel. The active tool is filled
+ * with the brand accent so it reads as distinct from both rest and hover.
+ */
+const TOOL_BUTTON =
+  "flex h-9 w-9 items-center justify-center rounded-full transition-colors"
+const TOOL_BUTTON_ACTIVE = "bg-accent-dim text-brand"
+const TOOL_BUTTON_IDLE =
+  "text-copy-muted hover:bg-elevated hover:text-copy-primary"
+
+interface ToolPanelProps {
+  /** The one tool that is active right now. */
+  activeTool: CanvasTool
+  /** Make a tool active. */
+  onSelectTool: (tool: CanvasTool) => void
+}
+
+/**
+ * Floating pill-shaped tool panel at the bottom-center of the canvas: the two
+ * cursor tools (select, hand), a divider, then the six shape tools. All eight own
+ * the canvas cursor, which is why they share one group — zoom and undo do not, so
+ * they stay in `CanvasControls`.
+ *
+ * A shape button does double duty. Clicking it activates that shape *tool*, and
+ * the canvas then places the shape on the next click. Dragging it still starts a
+ * native drag carrying the shape name and default size, which the canvas reads on
+ * drop — that path is unchanged and does not touch the active tool. While
  * dragging, a ghost preview of the shape (same type and default size used on
  * drop) is attached to the cursor via the native drag image.
  */
-export function ShapePanel() {
+export function ToolPanel({ activeTool, onSelectTool }: ToolPanelProps) {
   // Off-screen preview elements, one per shape, snapshotted as the drag image.
   const previewRefs = useRef<Partial<Record<CanvasNodeShape, HTMLDivElement | null>>>(
     {}
@@ -81,17 +129,47 @@ export function ShapePanel() {
     <>
       <div className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2">
         <div className="flex items-center gap-1 rounded-full border border-surface-border bg-surface/90 p-1.5 shadow-lg backdrop-blur">
+          {CANVAS_CURSOR_TOOLS.map((tool) => {
+            const { icon: Icon, label, shortcut } = CURSOR_TOOLS[tool]
+            const isActive = activeTool === tool
+            return (
+              <button
+                key={tool}
+                type="button"
+                onClick={() => onSelectTool(tool)}
+                aria-pressed={isActive}
+                title={tooltip(label, shortcut)}
+                aria-label={label}
+                className={cn(
+                  TOOL_BUTTON,
+                  isActive ? TOOL_BUTTON_ACTIVE : TOOL_BUTTON_IDLE
+                )}
+              >
+                <Icon className="h-5 w-5" />
+              </button>
+            )
+          })}
+
+          <div className="mx-1 h-5 w-px bg-surface-border" aria-hidden />
+
           {NODE_SHAPES.map(({ shape, label, defaultSize }) => {
             const Icon = SHAPE_ICONS[shape]
+            const isActive = activeTool === shape
             return (
               <button
                 key={shape}
                 type="button"
                 draggable
+                onClick={() => onSelectTool(shape)}
                 onDragStart={(event) => handleDragStart(event, shape, defaultSize)}
-                title={label}
-                aria-label={`Drag to add a ${label.toLowerCase()}`}
-                className="flex h-9 w-9 cursor-grab items-center justify-center rounded-full text-copy-muted transition-colors hover:bg-elevated hover:text-copy-primary active:cursor-grabbing"
+                aria-pressed={isActive}
+                title={tooltip(label, SHAPE_SHORTCUTS[shape])}
+                aria-label={`${label} — click to place, or drag onto the canvas`}
+                className={cn(
+                  TOOL_BUTTON,
+                  "cursor-grab active:cursor-grabbing",
+                  isActive ? TOOL_BUTTON_ACTIVE : TOOL_BUTTON_IDLE
+                )}
               >
                 <Icon className="h-5 w-5" />
               </button>

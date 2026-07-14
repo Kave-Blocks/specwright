@@ -20,7 +20,7 @@ interface NodeShapeProps {
  * Rectangle, pill, and circle use CSS borders; diamond, hexagon, and cylinder
  * are drawn as SVG shapes that scale with the node via a stretched viewBox.
  * Borders stay subtle at rest and brighten when selected. Shared by the node
- * renderer and the shape-panel drag preview so both draw the same shape.
+ * renderer and the tool-panel drag preview so both draw the same shape.
  */
 export function NodeShape({ shape, color, selected = false }: NodeShapeProps) {
   if (shape === "rectangle" || shape === "pill" || shape === "circle") {

@@ -87,7 +87,7 @@ export const AI_CHAT_MAX_LENGTH = 2000
  */
 export const AI_CHAT_ASSISTANT_SENDER = {
   id: "ghost-ai",
-  name: "Ghost AI",
+  name: "Specwright",
 } as const
 
 /**

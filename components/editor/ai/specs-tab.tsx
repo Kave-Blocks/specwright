@@ -29,10 +29,10 @@ const EMPTY_CANVAS_ERROR =
 const TOO_LARGE_ERROR =
   "This canvas is too large to turn into a spec. Try trimming it down."
 const START_ERROR = "Couldn’t start the spec. Please try again."
-const RUN_FAILED_ERROR = "Ghost AI couldn’t finish the spec. Please try again."
+const RUN_FAILED_ERROR = "Specwright couldn’t finish the spec. Please try again."
 
 /** Status line while a spec run is in flight but has published nothing yet. */
-const WORKING_FALLBACK = "Ghost AI is working…"
+const WORKING_FALLBACK = "Specwright is working…"
 
 /** The spec run this client is tracking. */
 interface ActiveRun {

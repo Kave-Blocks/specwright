@@ -9,7 +9,7 @@ Complete the existing AI sidebar placeholder and turn it into a proper floating 
 
 2. Add the sidebar header.
    - title: `AI Workspace`
-   - subtitle: `Collaborate with Ghost AI`
+   - subtitle: `Collaborate with Specwright`
    - small bot icon
    - close button aligned to the right
    - use `text-primary-text` for the title

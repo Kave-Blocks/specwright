@@ -9,7 +9,7 @@ Override Clerk appearance variables using the app’s existing CSS variables. Do
 Sign-in and sign-up pages:
 
 - large screens: 50/50 two-panel layout
-- left panel: an elevated surface (`bg-surface`) distinct from the base background, with a right divider; contains a compact brand lockup (cyan logo mark + "Ghost AI"), a headline, a short tagline, and a feature list where each item pairs a small tokened icon with a title and one-line description; footer line pinned to the bottom
+- left panel: an elevated surface (`bg-surface`) distinct from the base background, with a right divider; contains a compact brand lockup (cyan logo mark + "Specwright"), a headline, a short tagline, and a feature list where each item pairs a small tokened icon with a title and one-line description; footer line pinned to the bottom
 - right panel: centered Clerk form on the base background
 - small screens: form only (left panel hidden)
 - no gradients

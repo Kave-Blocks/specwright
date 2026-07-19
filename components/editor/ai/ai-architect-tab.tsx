@@ -27,11 +27,11 @@ const DESIGN_DONE_MESSAGE = "Done — your architecture is on the canvas."
 
 /** AI reply posted when the run itself fails, or can no longer be tracked. */
 const DESIGN_FAILED_MESSAGE =
-  "Ghost AI couldn’t finish the design. Please try again."
+  "Specwright couldn’t finish the design. Please try again."
 
 /** AI reply posted when the design request never starts. */
 const DESIGN_START_ERROR_MESSAGE =
-  "Ghost AI couldn’t start the design. Please try again."
+  "Specwright couldn’t start the design. Please try again."
 
 /**
  * Shown inline (not in the feed) — the one error the chat feed can't carry, by
@@ -44,7 +44,7 @@ const LOAD_ERROR_MESSAGE =
   "Couldn’t load the conversation. Reload the page to try again."
 
 /** Status-strip line while the AI works but hasn't published any text yet. */
-const WORKING_FALLBACK = "Ghost AI is working…"
+const WORKING_FALLBACK = "Specwright is working…"
 
 /** The design run this client is currently tracking. */
 interface ActiveRun {
@@ -97,7 +97,7 @@ export function AiArchitectTab({ projectId, aiActivity }: AiArchitectTabProps) {
  * Submitting publishes the prompt to the feed and starts the durable design task
  * (`POST /api/ai/design`), which returns the run id plus a run-scoped token. The
  * run is then tracked live with `useRealtimeRun`: the input stays disabled and
- * the send button spins until it finishes, at which point Ghost AI's reply is
+ * the send button spins until it finishes, at which point Specwright's reply is
  * pushed to the feed. Progress text rides the separate `ai-status-feed` (shown in
  * the status strip above the input), so it never lands in the chat — and the
  * nodes and edges the task writes arrive on their own through Liveblocks, which
@@ -148,7 +148,7 @@ function AiArchitectChat({ projectId, aiActivity }: AiArchitectTabProps) {
     bottomRef.current?.scrollIntoView({ block: "nearest" })
   }, [messages.length])
 
-  /** Post Ghost AI's closing line, then drop the run (re-enabling the input). */
+  /** Post Specwright's closing line, then drop the run (re-enabling the input). */
   const settleRun = useCallback(
     async (content: string) => {
       try {
@@ -284,7 +284,7 @@ function AiArchitectChat({ projectId, aiActivity }: AiArchitectTabProps) {
                 Describe what you want to build
               </p>
               <p className="text-xs text-copy-muted">
-                Ghost AI turns your prompt into a system architecture on the
+                Specwright turns your prompt into a system architecture on the
                 canvas.
               </p>
             </div>
@@ -349,8 +349,8 @@ function AiArchitectChat({ projectId, aiActivity }: AiArchitectTabProps) {
             value={input}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={busy ? "Ghost AI is working…" : "Message Ghost AI…"}
-            aria-label="Message Ghost AI"
+            placeholder={busy ? "Specwright is working…" : "Message Specwright…"}
+            aria-label="Message Specwright"
             disabled={busy}
             className="max-h-40 min-h-18 resize-none pr-12"
           />
@@ -408,7 +408,7 @@ function formatTimestamp(timestamp: number): string {
 }
 
 /**
- * One message in the shared room chat. Ghost AI's replies get the dark bubble;
+ * One message in the shared room chat. Specwright's replies get the dark bubble;
  * everyone's prompts get the green one. The chat is collaborative, so a person's
  * message also carries who sent it — own messages sit on the right, a
  * collaborator's (and the AI's) on the left.

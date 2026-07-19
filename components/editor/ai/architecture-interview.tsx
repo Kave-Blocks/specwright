@@ -165,7 +165,7 @@ function InterviewBody({
         <DialogDescription className="text-copy-muted">
           {question
             ? question.help
-            : "Edit anything below — this exact text is what Ghost AI designs from."}
+            : "Edit anything below — this exact text is what Specwright designs from."}
         </DialogDescription>
       </DialogHeader>
 

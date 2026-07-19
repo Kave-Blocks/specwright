@@ -55,7 +55,7 @@ export interface AiChat {
   /** Publish a message to the room. Rejects if the write fails. */
   sendMessage: (content: string) => Promise<void>
   /**
-   * Publish an AI reply to the room (Ghost AI's own line in the conversation —
+   * Publish an AI reply to the room (Specwright's own line in the conversation —
    * a design's outcome, or an error). Written to the same feed as the people's
    * messages, so every participant sees it. Rejects if the write fails.
    */

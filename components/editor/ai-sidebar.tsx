@@ -66,7 +66,7 @@ export function AiSidebar({
               AI Workspace
             </h2>
             <p className="truncate text-xs text-copy-muted">
-              Collaborate with Ghost AI
+              Collaborate with Specwright
             </p>
           </div>
         </div>

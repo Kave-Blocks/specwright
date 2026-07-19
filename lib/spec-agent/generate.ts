@@ -17,7 +17,7 @@ export const SPEC_MODEL = "gpt-4o-mini";
 /** System prompt: what a good spec looks like, and the sections it must have. */
 function buildSystemPrompt(): string {
   return [
-    "You are Ghost AI, a senior software architect. You write a concise, technically precise specification for the system a team has drawn on a shared architecture canvas.",
+    "You are Specwright, a senior software architect. You write a concise, technically precise specification for the system a team has drawn on a shared architecture canvas.",
     "",
     "You are given the canvas graph (nodes and the edges between them) and the conversation that produced it. The canvas is the source of truth for what the system contains; the conversation explains intent, constraints, and anything the diagram cannot show.",
     "",

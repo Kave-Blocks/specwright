@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { FileText, Ghost, Share2, Sparkles } from "lucide-react"
+import { DraftingCompass, FileText, Share2, Sparkles } from "lucide-react"
 
 const FEATURES = [
   {
@@ -29,9 +29,9 @@ export function AuthLayout({ children }: AuthLayoutProps) {
       <aside className="hidden flex-col justify-between border-r border-surface-border bg-surface px-12 py-10 lg:flex xl:px-16">
         <div className="flex items-center gap-3">
           <span className="flex size-9 items-center justify-center rounded-xl bg-brand text-primary-foreground">
-            <Ghost className="size-5" />
+            <DraftingCompass className="size-5" />
           </span>
-          <span className="text-lg font-semibold text-copy-primary">Ghost AI</span>
+          <span className="text-lg font-semibold text-copy-primary">Specwright</span>
         </div>
 
         <div className="max-w-md space-y-10">
@@ -40,7 +40,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               Design systems at the speed of thought.
             </h1>
             <p className="text-base leading-relaxed text-copy-secondary">
-              Describe your architecture in plain English. Ghost AI maps it to a
+              Describe your architecture in plain English. Specwright maps it to a
               shared canvas your whole team can refine in real time.
             </p>
           </div>
@@ -63,7 +63,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         </div>
 
         <p className="text-xs text-copy-faint">
-          © 2026 Ghost AI. All rights reserved.
+          © 2026 Specwright. All rights reserved.
         </p>
       </aside>
 

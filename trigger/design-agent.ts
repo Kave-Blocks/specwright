@@ -15,7 +15,7 @@ export interface DesignAgentPayload {
 
 /** The AI participant's stable identity in the room (not a real Clerk user). */
 const AI_USER_ID = "ghost-ai";
-const AI_NAME = "Ghost AI";
+const AI_NAME = "Specwright";
 /** The AI accent (`--accent-ai` from `ui-context.md`) tints the AI cursor/avatar. */
 const AI_COLOR = "#6457f9";
 /** Where the AI cursor hovers while it works, in canvas coordinates. */
@@ -105,10 +105,10 @@ function describeResult(summary: AppliedSummary): string {
   const edits = summary.nodesUpdated + summary.nodesRemoved + summary.edgesRemoved;
   if (parts.length === 0) {
     return edits > 0
-      ? "Ghost AI refined the canvas."
-      : "Ghost AI didn't find any changes to make.";
+      ? "Specwright refined the canvas."
+      : "Specwright didn't find any changes to make.";
   }
-  return `Ghost AI added ${parts.join(" and ")}.`;
+  return `Specwright added ${parts.join(" and ")}.`;
 }
 
 /**
@@ -151,7 +151,7 @@ export const designAgent = task({
         { cursor: AI_CURSOR, thinking: true },
         PRESENCE_TTL,
       );
-      await announce(liveblocks, roomId, "start", "Ghost AI is reading your prompt…");
+      await announce(liveblocks, roomId, "start", "Specwright is reading your prompt…");
 
       // Read the current canvas so the model can extend an existing diagram
       // rather than only starting fresh. A read-only mutateFlow flushes nothing.
@@ -167,7 +167,7 @@ export const designAgent = task({
         liveblocks,
         roomId,
         "processing",
-        "Ghost AI is designing your architecture…",
+        "Specwright is designing your architecture…",
       );
       // Refresh presence so the "thinking" state survives the slow model call.
       await setAiPresence(
@@ -227,7 +227,7 @@ export const designAgent = task({
         liveblocks,
         roomId,
         "error",
-        "Ghost AI hit an error and couldn't finish. Please try again.",
+        "Specwright hit an error and couldn't finish. Please try again.",
       );
 
       throw error;

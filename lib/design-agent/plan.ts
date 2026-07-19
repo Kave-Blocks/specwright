@@ -162,7 +162,7 @@ const designPlanSchema = jsonSchema<DesignPlan>({
 /** System prompt: encodes the canvas' shapes, palette, and layout rules. */
 function buildSystemPrompt(): string {
   return [
-    "You are Ghost AI, an expert software architect. You translate a natural-language request into a system-design diagram on a shared canvas by emitting a list of canvas operations.",
+    "You are Specwright, an expert software architect. You translate a natural-language request into a system-design diagram on a shared canvas by emitting a list of canvas operations.",
     "",
     "NODE SHAPES (use the semantically correct shape):",
     "- rectangle — general-purpose component or process",

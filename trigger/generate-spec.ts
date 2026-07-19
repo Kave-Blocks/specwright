@@ -86,14 +86,14 @@ export const generateSpec = schemaTask({
         edges: edges.length,
         messages: chatHistory.length,
       });
-      setPhase("start", "Ghost AI is reading your canvas…");
+      setPhase("start", "Specwright is reading your canvas…");
 
       if (!process.env.OPENAI_API_KEY) {
         // A configuration error, not a transient one — do not retry.
         throw new AbortTaskRunError("OPENAI_API_KEY is not set");
       }
 
-      setPhase("processing", "Ghost AI is writing your technical spec…");
+      setPhase("processing", "Specwright is writing your technical spec…");
 
       const markdown = await generateSpecMarkdown({ chatHistory, nodes, edges });
 
@@ -103,7 +103,7 @@ export const generateSpec = schemaTask({
         characters: markdown.length,
       });
 
-      setPhase("processing", "Ghost AI is saving your technical spec…");
+      setPhase("processing", "Specwright is saving your technical spec…");
 
       const spec = await saveProjectSpec({ projectId, markdown });
 
@@ -116,7 +116,7 @@ export const generateSpec = schemaTask({
       // Publish the id (never the private blob URL) so the requester can fetch
       // the stored file through the access-checked download route.
       metadata.set("specId", spec.id);
-      setPhase("complete", "Ghost AI finished your technical spec.");
+      setPhase("complete", "Specwright finished your technical spec.");
 
       // The task output stays plain Markdown — storage is a side effect, so a
       // subscriber can still render the spec straight from the run.
@@ -140,7 +140,7 @@ export const generateSpec = schemaTask({
       if (terminal) {
         setPhase(
           "error",
-          "Ghost AI hit an error and couldn't finish the spec. Please try again.",
+          "Specwright hit an error and couldn't finish the spec. Please try again.",
         );
       }
 

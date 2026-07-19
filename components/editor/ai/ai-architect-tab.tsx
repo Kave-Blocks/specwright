@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { useRealtimeRun } from "@trigger.dev/react-hooks"
-import { AlertCircle, Bot, Loader2, Send } from "lucide-react"
+import { AlertCircle, Bot, Loader2, Send, Sparkles } from "lucide-react"
 
 import type { AiActivity } from "@/components/editor/ai/ai-activity-context"
+import { ArchitectureInterview } from "@/components/editor/ai/architecture-interview"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Textarea } from "@/components/ui/textarea"
@@ -107,6 +108,7 @@ function AiArchitectChat({ projectId, aiActivity }: AiArchitectTabProps) {
   const [pending, setPending] = useState(false)
   const [activeRun, setActiveRun] = useState<ActiveRun | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [interviewOpen, setInterviewOpen] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   /** Guards the completion reply, so a run can only ever be settled once. */
   const settledRunRef = useRef<string | null>(null)
@@ -192,9 +194,19 @@ function AiArchitectChat({ projectId, aiActivity }: AiArchitectTabProps) {
     return () => clearTimeout(timer)
   }, [activeRun, run, runError, settleRun])
 
-  async function send(text: string) {
+  /**
+   * The single submit path: publish the prompt to the shared chat feed, start
+   * the durable design task, and track the run. Both entries use it unchanged —
+   * the freeform input and the guided interview differ only in the text they
+   * hand it.
+   *
+   * Resolves `true` once the run is under way, which is what lets the interview
+   * dialog close on a successful hand-off (and stay open, with its error shown,
+   * on a failed one). The freeform callers ignore it.
+   */
+  async function send(text: string): Promise<boolean> {
     const trimmed = text.trim()
-    if (!trimmed || busy || !canSend) return
+    if (!trimmed || busy || !canSend) return false
 
     setPending(true)
     setError(null)
@@ -208,7 +220,7 @@ function AiArchitectChat({ projectId, aiActivity }: AiArchitectTabProps) {
       console.error(sendError)
       setError(SEND_ERROR_MESSAGE)
       setPending(false)
-      return
+      return false
     }
 
     try {
@@ -230,6 +242,7 @@ function AiArchitectChat({ projectId, aiActivity }: AiArchitectTabProps) {
       }
 
       setActiveRun({ runId, publicToken })
+      return true
     } catch (designError) {
       console.error(designError)
       // Errors belong in the conversation, so everyone sees why nothing came.
@@ -239,6 +252,7 @@ function AiArchitectChat({ projectId, aiActivity }: AiArchitectTabProps) {
           setError(DESIGN_START_ERROR_MESSAGE)
         }
       )
+      return false
     } finally {
       setPending(false)
     }
@@ -355,11 +369,32 @@ function AiArchitectChat({ projectId, aiActivity }: AiArchitectTabProps) {
             )}
           </Button>
         </div>
-        <p className="mt-2 text-center text-xs text-copy-faint">
-          <kbd className="font-sans">Enter</kbd> to send ·{" "}
-          <kbd className="font-sans">Shift + Enter</kbd> for a new line
-        </p>
+        {/* The interview is a second entry into the same submit, not a second
+         * generation path — it opens with whatever is already typed above. */}
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => setInterviewOpen(true)}
+            disabled={busy || !canSend}
+            className="flex items-center gap-1.5 rounded-full bg-subtle px-3 py-1.5 text-xs text-brand transition-colors hover:bg-elevated focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            Guided brief
+          </button>
+          <p className="text-xs text-copy-faint">
+            <kbd className="font-sans">Enter</kbd> to send ·{" "}
+            <kbd className="font-sans">Shift + Enter</kbd> for a new line
+          </p>
+        </div>
       </div>
+
+      <ArchitectureInterview
+        open={interviewOpen}
+        onOpenChange={setInterviewOpen}
+        initialIdea={input}
+        onGenerate={send}
+        busy={busy}
+      />
     </div>
   )
 }

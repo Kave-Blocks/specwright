@@ -13,20 +13,9 @@ import { cn } from "@/lib/utils"
 interface ProjectSidebarProps {
   isOpen: boolean
   onClose: () => void
-  /**
-   * When true, the panel docks as an in-flow column on desktop (pushing the
-   * canvas to the remaining space) while staying a slide-over overlay on
-   * mobile. Defaults to the pure floating-overlay treatment used by the
-   * `/editor` home shell.
-   */
-  docked?: boolean
 }
 
-export function ProjectSidebar({
-  isOpen,
-  onClose,
-  docked = false,
-}: ProjectSidebarProps) {
+export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
   const {
     ownedProjects,
     sharedProjects,
@@ -40,19 +29,11 @@ export function ProjectSidebar({
     <aside
       aria-hidden={!isOpen}
       className={cn(
-        // Card visuals shared by both variants.
-        "z-30 flex w-80 flex-col rounded-2xl border border-surface-border bg-surface/95 shadow-2xl backdrop-blur-sm",
-        // Mobile overlay positioning (base) — docked mode overrides at md+.
-        "fixed left-3 top-[calc(var(--editor-navbar-height)+0.75rem)] h-[calc(100vh-var(--editor-navbar-height)-1.5rem)]",
-        docked
-          ? "transition-[transform,margin,opacity] duration-200 ease-out md:relative md:left-auto md:top-auto md:z-auto md:h-auto md:shrink-0"
-          : "transition-transform duration-200 ease-out",
+        "fixed left-3 top-[calc(var(--editor-navbar-height)+0.75rem)] z-30 flex h-[calc(100vh-var(--editor-navbar-height)-1.5rem)] w-80 flex-col rounded-2xl border border-surface-border bg-surface/95 shadow-2xl backdrop-blur-sm",
+        "transition-transform duration-200 ease-out",
         isOpen
-          ? cn("translate-x-0", docked && "md:mr-3")
-          : cn(
-              "-translate-x-[calc(100%+1rem)] pointer-events-none",
-              docked && "md:-mr-80 md:translate-x-0 md:opacity-0"
-            )
+          ? "translate-x-0"
+          : "pointer-events-none -translate-x-[calc(100%+1rem)]"
       )}
     >
       <div className="flex items-center justify-between border-b border-surface-border px-4 py-3">

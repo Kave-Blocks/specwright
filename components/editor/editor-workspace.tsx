@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
+import { useMemo, useRef, useState, type CSSProperties } from "react"
 
 import { AiSidebar } from "@/components/editor/ai-sidebar"
 import {
@@ -114,9 +114,9 @@ export function EditorWorkspace({
                   )}
                 />
 
-                {/* Docked workspace row: sidebar · canvas · AI panel. On desktop the
-                 * panels are in-flow columns so the canvas fills the remaining space;
-                 * on mobile they collapse to slide-over overlays.
+                {/* Workspace row. The canvas always spans the full width; both
+                 * panels are fixed slide-over overlays that float above it, so
+                 * toggling one never resizes (and never re-fits) the canvas.
                  *
                  * The whole row lives inside the Liveblocks room: the canvas needs it
                  * for storage/presence, and the AI sidebar needs it for the `ai-chat`
@@ -124,17 +124,29 @@ export function EditorWorkspace({
                 <EditorRoom roomId={projectId}>
                   <div className="flex flex-1 overflow-hidden p-3 pt-[calc(var(--editor-navbar-height)+0.75rem)]">
                     <ProjectSidebar
-                      docked
                       isOpen={isSidebarOpen}
                       onClose={() => setIsSidebarOpen(false)}
                     />
 
-                    <main className="relative flex-1 overflow-hidden bg-base">
+                    {/* The canvas surface itself stays full-bleed under the
+                     * panels; these vars only push the floating canvas chrome
+                     * (zoom controls, presence avatars) clear of an open panel,
+                     * which would otherwise cover them. */}
+                    <main
+                      className="relative flex-1 overflow-hidden bg-base"
+                      style={
+                        {
+                          "--canvas-inset-left": isSidebarOpen ? "20rem" : "0px",
+                          "--canvas-inset-right": isAiSidebarOpen
+                            ? "20rem"
+                            : "0px",
+                        } as CSSProperties
+                      }
+                    >
                       <CanvasSurface roomId={projectId} />
                     </main>
 
                     <AiSidebar
-                      docked
                       projectId={projectId}
                       aiActivity={aiActivity}
                       isOpen={isAiSidebarOpen}

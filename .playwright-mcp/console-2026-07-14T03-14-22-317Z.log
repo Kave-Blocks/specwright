@@ -74,3 +74,235 @@
 [  610099ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj:0
 [  816985ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
 [  817038ms] [LOG] [Fast Refresh] done in 154ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[22984451ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[22985911ms] [LOG] [Fast Refresh] done in 1539ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[22986224ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[22986356ms] [LOG] [Fast Refresh] done in 232ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[22987540ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[22987784ms] [LOG] [Fast Refresh] done in 346ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[22993023ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[22993120ms] [LOG] [Fast Refresh] done in 198ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[22993344ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[22993346ms] [LOG] [Fast Refresh] done in 103ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[22993603ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[22993644ms] [LOG] [Fast Refresh] done in 141ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[22998455ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[22998682ms] [LOG] [Fast Refresh] done in 314ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[23008093ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[23008159ms] [LOG] [Fast Refresh] done in 148ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[23021199ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[23021484ms] [LOG] [Fast Refresh] done in 385ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[23163045ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[23163063ms] [LOG] [Fast Refresh] done in 83ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[23167477ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[23167518ms] [LOG] [Fast Refresh] done in 142ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[23171990ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[23172110ms] [LOG] [Fast Refresh] done in 184ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[23178187ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[23178240ms] [LOG] [Fast Refresh] done in 138ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[24620284ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[34822802ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[34822803ms] [LOG] [Fast Refresh] done in 104ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[35395274ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=G1lgg7D5okxeCUjGmyjPX' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[35396278ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=G1lgg7D5okxeCUjGmyjPX' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[35397282ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=G1lgg7D5okxeCUjGmyjPX' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[35398287ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=G1lgg7D5okxeCUjGmyjPX' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[35399292ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=G1lgg7D5okxeCUjGmyjPX' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[35404299ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=G1lgg7D5okxeCUjGmyjPX' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[35409314ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=G1lgg7D5okxeCUjGmyjPX' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[35414334ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=G1lgg7D5okxeCUjGmyjPX' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[35419371ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[35419522ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj:0
+[35419603ms] [LOG] [PostHog.js] set_config {config: Object, oldConfig: Object, newConfig: Object} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35419603ms] [LOG] [PostHog.js] Persistence loaded localStorage+cookie {} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35419604ms] [LOG] [PostHog.js] Persistence loaded sessionStorage {} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35419605ms] [LOG] [PostHog.js] Initializing extensions synchronously @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35419605ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35419606ms] [LOG] [PostHog.js] Starting in debug mode {this: ao, config: Object, thisC: Object, p: Object, s: Object} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35419611ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35419653ms] [LOG] [PostHog.js] [SessionId] new session ID generated {sessionId: 019f60ba-c9f1-7555-b56f-aa91b1382cac, windowId: 019f60ba-c9f1-7555-b56f-aa92a7ad2876, changeReason: Object} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35419653ms] [LOG] [PostHog.js] send "$pageview" {uuid: 019f60ba-c9ec-78d4-8a8d-3d2d5f5c449f, event: $pageview, properties: Object, timestamp: Tue Jul 14 2026 21:04:41 GMT+0800 (Philippine Standard Time)} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35419654ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35419808ms] [LOG] [PostHog.js] Persistence loaded sessionStorage {$sdk_debug_extensions_init_method: synchronous, $sdk_debug_extensions_init_time_ms: 1, $referrer: http://localhost:3000/sign-in?redirect_url=http%3A…lhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj, $referring_domain: localhost:3000} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35419808ms] [LOG] [PostHog.js] set_config {config: Object, oldConfig: Object, newConfig: Object} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35419808ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35419809ms] [LOG] [PostHog.js] [SessionRecording] starting @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35419809ms] [LOG] [PostHog.js] [Surveys] flags response received, isSurveysEnabled: false @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35419810ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35419895ms] [LOG] [PostHog.js] [Surveys] Surveys loaded successfully @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35490696ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35490736ms] [LOG] [Fast Refresh] done in 141ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35515235ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35515265ms] [LOG] [Fast Refresh] done in 88ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35525276ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35525566ms] [LOG] [Fast Refresh] done in 390ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35525821ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35525863ms] [LOG] [Fast Refresh] done in 143ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35532129ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35532219ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj&_rsc=qUGY0XrdZ4DK7CAs:0
+[35532224ms] [LOG] [PostHog.js] send "$snapshot" {uuid: 019f60bc-81aa-7fad-bb8a-1d2deec4e8fb, event: $snapshot, properties: Object, timestamp: Tue Jul 14 2026 21:06:34 GMT+0800 (Philippine Standard Time)} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35532391ms] [LOG] [Fast Refresh] done in 210ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35532435ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj:0
+[35532544ms] [LOG] [PostHog.js] set_config {config: Object, oldConfig: Object, newConfig: Object} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35532544ms] [LOG] [PostHog.js] Persistence loaded localStorage+cookie {$device_id: 019f60ba-c9c2-70b0-9261-0efcebcea812, distinct_id: 019f60ba-c9c2-70b0-9261-0efcebcea812, $sesid: Array(3), $initial_person_info: Object, $user_state: anonymous} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35532545ms] [LOG] [PostHog.js] Persistence loaded sessionStorage {$sdk_debug_extensions_init_method: synchronous, $sdk_debug_extensions_init_time_ms: 1, $referrer: http://localhost:3000/sign-in?redirect_url=http%3A…lhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj, $referring_domain: localhost:3000, $sdk_debug_replay_remote_trigger_matching_config: null} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35532546ms] [LOG] [PostHog.js] Initializing extensions synchronously @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35532546ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35532546ms] [LOG] [PostHog.js] [SessionRecording] starting @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35532546ms] [LOG] [PostHog.js] Starting in debug mode {this: ao, config: Object, thisC: Object, p: Object, s: Object} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35532549ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35532563ms] [LOG] [PostHog.js] send "$pageview" {uuid: 019f60bc-82ff-7f96-a354-531348132e89, event: $pageview, properties: Object, timestamp: Tue Jul 14 2026 21:06:34 GMT+0800 (Philippine Standard Time)} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35532566ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35532599ms] [LOG] [PostHog.js] Persistence loaded sessionStorage {$sdk_debug_extensions_init_method: synchronous, $sdk_debug_extensions_init_time_ms: 1, $referrer: http://localhost:3000/sign-in?redirect_url=http%3A…lhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj, $referring_domain: localhost:3000, $sdk_debug_replay_remote_trigger_matching_config: null} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35532599ms] [LOG] [PostHog.js] set_config {config: Object, oldConfig: Object, newConfig: Object} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35532599ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35532599ms] [LOG] [PostHog.js] [Surveys] flags response received, isSurveysEnabled: false @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35532599ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35532601ms] [LOG] [PostHog.js] [Surveys] Surveys loaded successfully @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35538917ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35539349ms] [LOG] [Fast Refresh] done in 532ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35647655ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35647772ms] [LOG] [Fast Refresh] done in 140ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35647874ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35647925ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj&_rsc=qUGY0XrdZ4DK7CAs:0
+[35647929ms] [LOG] [PostHog.js] send "$snapshot" {uuid: 019f60be-45a5-70ca-a16c-12f16f17efd3, event: $snapshot, properties: Object, timestamp: Tue Jul 14 2026 21:08:30 GMT+0800 (Philippine Standard Time)} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35647950ms] [LOG] [Fast Refresh] done in 177ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35648134ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj&_rsc=qUGY0XrdZ4DK7CAs:0
+[35648238ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35648304ms] [LOG] [Fast Refresh] done in 167ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35648449ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj:0
+[35648574ms] [LOG] [PostHog.js] set_config {config: Object, oldConfig: Object, newConfig: Object} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35648574ms] [LOG] [PostHog.js] Persistence loaded localStorage+cookie {$device_id: 019f60ba-c9c2-70b0-9261-0efcebcea812, distinct_id: 019f60ba-c9c2-70b0-9261-0efcebcea812, $sesid: Array(3), $initial_person_info: Object, $user_state: anonymous} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35648575ms] [LOG] [PostHog.js] Persistence loaded sessionStorage {$sdk_debug_extensions_init_method: synchronous, $sdk_debug_extensions_init_time_ms: 1, $referrer: http://localhost:3000/sign-in?redirect_url=http%3A…lhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj, $referring_domain: localhost:3000, $sdk_debug_replay_remote_trigger_matching_config: null} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35648576ms] [LOG] [PostHog.js] Initializing extensions synchronously @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35648576ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35648576ms] [LOG] [PostHog.js] [SessionRecording] starting @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35648576ms] [LOG] [PostHog.js] Starting in debug mode {this: ao, config: Object, thisC: Object, p: Object, s: Object} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[35648578ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35648586ms] [LOG] [PostHog.js] send "$pageview" {uuid: 019f60be-4836-78b7-9d7e-d0774700c37f, event: $pageview, properties: Object, timestamp: Tue Jul 14 2026 21:08:30 GMT+0800 (Philippine Standard Time)} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35648603ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35648642ms] [LOG] [PostHog.js] Persistence loaded sessionStorage {$sdk_debug_extensions_init_method: synchronous, $sdk_debug_extensions_init_time_ms: 1, $referrer: http://localhost:3000/sign-in?redirect_url=http%3A…lhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj, $referring_domain: localhost:3000, $sdk_debug_replay_remote_trigger_matching_config: null} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35648642ms] [LOG] [PostHog.js] set_config {config: Object, oldConfig: Object, newConfig: Object} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35648643ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35648643ms] [LOG] [PostHog.js] [Surveys] flags response received, isSurveysEnabled: false @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35648643ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35648650ms] [LOG] [PostHog.js] [Surveys] Surveys loaded successfully @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35769898ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[35770445ms] [LOG] [Fast Refresh] done in 651ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[36635063ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[36635113ms] [LOG] [Fast Refresh] done in 152ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[36940417ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[36940425ms] [LOG] [Fast Refresh] done in 109ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37012034ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37012827ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj&_rsc=qUGY0XrdZ4DK7CAs:0
+[37012837ms] [LOG] [PostHog.js] send "$snapshot" {uuid: 019f60d3-194f-7cce-95be-d55fad67a948, event: $snapshot, properties: Object, timestamp: Tue Jul 14 2026 21:31:15 GMT+0800 (Philippine Standard Time)} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37012896ms] [LOG] [Fast Refresh] done in 747ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37013280ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj&_rsc=qUGY0XrdZ4DK7CAs:0
+[37013492ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj:0
+[37013628ms] [LOG] [PostHog.js] set_config {config: Object, oldConfig: Object, newConfig: Object} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37013628ms] [LOG] [PostHog.js] Persistence loaded localStorage+cookie {$device_id: 019f60ba-c9c2-70b0-9261-0efcebcea812, distinct_id: 019f60ba-c9c2-70b0-9261-0efcebcea812, $sesid: Array(3), $initial_person_info: Object, $user_state: anonymous} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37013629ms] [LOG] [PostHog.js] Persistence loaded sessionStorage {$sdk_debug_extensions_init_method: synchronous, $sdk_debug_extensions_init_time_ms: 1, $referrer: http://localhost:3000/sign-in?redirect_url=http%3A…lhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj, $referring_domain: localhost:3000, $sdk_debug_replay_remote_trigger_matching_config: null} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37013629ms] [LOG] [PostHog.js] Initializing extensions synchronously @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37013629ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37013630ms] [LOG] [PostHog.js] [SessionRecording] starting @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37013630ms] [LOG] [PostHog.js] Starting in debug mode {this: ao, config: Object, thisC: Object, p: Object, s: Object} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37013633ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37013648ms] [LOG] [PostHog.js] send "$pageview" {uuid: 019f60d3-1c7c-778d-9a8a-d1ac4075ecb3, event: $pageview, properties: Object, timestamp: Tue Jul 14 2026 21:31:15 GMT+0800 (Philippine Standard Time)} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37013649ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37014165ms] [LOG] [PostHog.js] Persistence loaded sessionStorage {$sdk_debug_extensions_init_method: synchronous, $sdk_debug_extensions_init_time_ms: 1, $referrer: http://localhost:3000/sign-in?redirect_url=http%3A…lhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj, $referring_domain: localhost:3000, $sdk_debug_replay_remote_trigger_matching_config: null} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37014165ms] [LOG] [PostHog.js] set_config {config: Object, oldConfig: Object, newConfig: Object} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37014165ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37014165ms] [LOG] [PostHog.js] [Surveys] flags response received, isSurveysEnabled: false @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37014166ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37014167ms] [LOG] [PostHog.js] [Surveys] Surveys loaded successfully @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37065288ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37065397ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj&_rsc=qUGY0XrdZ4DK7CAs:0
+[37065401ms] [LOG] [PostHog.js] send "$snapshot" {uuid: 019f60d3-e6a5-745a-9d96-4ccc508afbc2, event: $snapshot, properties: Object, timestamp: Tue Jul 14 2026 21:32:07 GMT+0800 (Philippine Standard Time)} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37065406ms] [LOG] [Fast Refresh] done in 153ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37065529ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37065532ms] [LOG] [Fast Refresh] done in 105ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37065573ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj&_rsc=qUGY0XrdZ4DK7CAs:0
+[37065650ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj:0
+[37065725ms] [LOG] [PostHog.js] set_config {config: Object, oldConfig: Object, newConfig: Object} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37065725ms] [LOG] [PostHog.js] Persistence loaded localStorage+cookie {$device_id: 019f60ba-c9c2-70b0-9261-0efcebcea812, distinct_id: 019f60ba-c9c2-70b0-9261-0efcebcea812, $sesid: Array(3), $initial_person_info: Object, $user_state: anonymous} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37065726ms] [LOG] [PostHog.js] Persistence loaded sessionStorage {$sdk_debug_extensions_init_method: synchronous, $sdk_debug_extensions_init_time_ms: 1, $referrer: http://localhost:3000/sign-in?redirect_url=http%3A…lhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj, $referring_domain: localhost:3000, $sdk_debug_replay_remote_trigger_matching_config: null} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37065726ms] [LOG] [PostHog.js] Initializing extensions synchronously @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37065726ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37065727ms] [LOG] [PostHog.js] [SessionRecording] starting @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37065728ms] [LOG] [PostHog.js] Starting in debug mode {this: ao, config: Object, thisC: Object, p: Object, s: Object} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37065730ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37065739ms] [LOG] [PostHog.js] send "$pageview" {uuid: 019f60d3-e7f6-7632-a620-e3354e530747, event: $pageview, properties: Object, timestamp: Tue Jul 14 2026 21:32:08 GMT+0800 (Philippine Standard Time)} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37065749ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37065762ms] [LOG] [PostHog.js] Persistence loaded sessionStorage {$sdk_debug_extensions_init_method: synchronous, $sdk_debug_extensions_init_time_ms: 2, $referrer: http://localhost:3000/sign-in?redirect_url=http%3A…lhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj, $referring_domain: localhost:3000, $sdk_debug_replay_remote_trigger_matching_config: null} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37065762ms] [LOG] [PostHog.js] set_config {config: Object, oldConfig: Object, newConfig: Object} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37065762ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37065762ms] [LOG] [PostHog.js] [Surveys] flags response received, isSurveysEnabled: false @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37065762ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37065765ms] [LOG] [PostHog.js] [Surveys] Surveys loaded successfully @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37112465ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37112760ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj&_rsc=qUGY0XrdZ4DK7CAs:0
+[37112763ms] [LOG] [PostHog.js] send "$snapshot" {uuid: 019f60d4-9fa7-70fe-8a41-f9b9ba903875, event: $snapshot, properties: Object, timestamp: Tue Jul 14 2026 21:32:55 GMT+0800 (Philippine Standard Time)} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37112982ms] [LOG] [Fast Refresh] done in 472ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37113016ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj&_rsc=qUGY0XrdZ4DK7CAs:0
+[37113094ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj:0
+[37113228ms] [LOG] [PostHog.js] set_config {config: Object, oldConfig: Object, newConfig: Object} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37113228ms] [LOG] [PostHog.js] Persistence loaded localStorage+cookie {$device_id: 019f60ba-c9c2-70b0-9261-0efcebcea812, distinct_id: 019f60ba-c9c2-70b0-9261-0efcebcea812, $sesid: Array(3), $initial_person_info: Object, $user_state: anonymous} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37113229ms] [LOG] [PostHog.js] Persistence loaded sessionStorage {$sdk_debug_extensions_init_method: synchronous, $sdk_debug_extensions_init_time_ms: 2, $referrer: http://localhost:3000/sign-in?redirect_url=http%3A…lhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj, $referring_domain: localhost:3000, $sdk_debug_replay_remote_trigger_matching_config: null} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37113229ms] [LOG] [PostHog.js] Initializing extensions synchronously @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37113230ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37113231ms] [LOG] [PostHog.js] [SessionRecording] starting @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37113231ms] [LOG] [PostHog.js] Starting in debug mode {this: ao, config: Object, thisC: Object, p: Object, s: Object} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37113233ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37113250ms] [LOG] [PostHog.js] send "$pageview" {uuid: 019f60d4-a18e-77e7-8bd2-c4631d118f99, event: $pageview, properties: Object, timestamp: Tue Jul 14 2026 21:32:55 GMT+0800 (Philippine Standard Time)} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37113262ms] [LOG] [PostHog.js] Persistence loaded sessionStorage {$sdk_debug_extensions_init_method: synchronous, $sdk_debug_extensions_init_time_ms: 1, $referrer: http://localhost:3000/sign-in?redirect_url=http%3A…lhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj, $referring_domain: localhost:3000, $sdk_debug_replay_remote_trigger_matching_config: null} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37113262ms] [LOG] [PostHog.js] set_config {config: Object, oldConfig: Object, newConfig: Object} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37113262ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37113263ms] [LOG] [PostHog.js] [Surveys] flags response received, isSurveysEnabled: false @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37113263ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37113265ms] [LOG] [PostHog.js] [Surveys] Surveys loaded successfully @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37113269ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37127791ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37127839ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj&_rsc=qUGY0XrdZ4DK7CAs:0
+[37127842ms] [LOG] [PostHog.js] send "$snapshot" {uuid: 019f60d4-da8e-75b6-a69a-7dd885264e9e, event: $snapshot, properties: Object, timestamp: Tue Jul 14 2026 21:33:10 GMT+0800 (Philippine Standard Time)} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37127885ms] [LOG] [Fast Refresh] done in 76ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37128029ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj:0
+[37128117ms] [LOG] [PostHog.js] set_config {config: Object, oldConfig: Object, newConfig: Object} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37128117ms] [LOG] [PostHog.js] Persistence loaded localStorage+cookie {$device_id: 019f60ba-c9c2-70b0-9261-0efcebcea812, distinct_id: 019f60ba-c9c2-70b0-9261-0efcebcea812, $sesid: Array(3), $initial_person_info: Object, $user_state: anonymous} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37128118ms] [LOG] [PostHog.js] Persistence loaded sessionStorage {$sdk_debug_extensions_init_method: synchronous, $sdk_debug_extensions_init_time_ms: 1, $referrer: http://localhost:3000/sign-in?redirect_url=http%3A…lhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj, $referring_domain: localhost:3000, $sdk_debug_replay_remote_trigger_matching_config: null} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37128118ms] [LOG] [PostHog.js] Initializing extensions synchronously @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37128118ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37128119ms] [LOG] [PostHog.js] [SessionRecording] starting @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37128119ms] [LOG] [PostHog.js] Starting in debug mode {this: ao, config: Object, thisC: Object, p: Object, s: Object} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37128122ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37128131ms] [LOG] [PostHog.js] send "$pageview" {uuid: 019f60d4-dbae-79ed-8b5c-748dee534a85, event: $pageview, properties: Object, timestamp: Tue Jul 14 2026 21:33:10 GMT+0800 (Philippine Standard Time)} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37128142ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37128157ms] [LOG] [PostHog.js] Persistence loaded sessionStorage {$sdk_debug_extensions_init_method: synchronous, $sdk_debug_extensions_init_time_ms: 1, $referrer: http://localhost:3000/sign-in?redirect_url=http%3A…lhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj, $referring_domain: localhost:3000, $sdk_debug_replay_remote_trigger_matching_config: null} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37128157ms] [LOG] [PostHog.js] set_config {config: Object, oldConfig: Object, newConfig: Object} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37128157ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37128158ms] [LOG] [PostHog.js] [Surveys] flags response received, isSurveysEnabled: false @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37128158ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37128159ms] [LOG] [PostHog.js] [Surveys] Surveys loaded successfully @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37166527ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37166589ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj&_rsc=qUGY0XrdZ4DK7CAs:0
+[37166591ms] [LOG] [PostHog.js] send "$snapshot" {uuid: 019f60d5-71eb-72e0-8735-ee654e84d82b, event: $snapshot, properties: Object, timestamp: Tue Jul 14 2026 21:33:48 GMT+0800 (Philippine Standard Time)} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37166775ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj&_rsc=qUGY0XrdZ4DK7CAs:0
+[37166777ms] [LOG] [Fast Refresh] done in 77ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37166860ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj:0
+[37166937ms] [LOG] [PostHog.js] set_config {config: Object, oldConfig: Object, newConfig: Object} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37166938ms] [LOG] [PostHog.js] Persistence loaded localStorage+cookie {$device_id: 019f60ba-c9c2-70b0-9261-0efcebcea812, distinct_id: 019f60ba-c9c2-70b0-9261-0efcebcea812, $sesid: Array(3), $initial_person_info: Object, $user_state: anonymous} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37166939ms] [LOG] [PostHog.js] Persistence loaded sessionStorage {$sdk_debug_extensions_init_method: synchronous, $sdk_debug_extensions_init_time_ms: 1, $referrer: http://localhost:3000/sign-in?redirect_url=http%3A…lhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj, $referring_domain: localhost:3000, $sdk_debug_replay_remote_trigger_matching_config: null} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37166939ms] [LOG] [PostHog.js] Initializing extensions synchronously @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37166939ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37166940ms] [LOG] [PostHog.js] [SessionRecording] starting @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37166940ms] [LOG] [PostHog.js] Starting in debug mode {this: ao, config: Object, thisC: Object, p: Object, s: Object} @ http://localhost:3000/_next/static/chunks/node_modules_posthog-js_dist_module_161gfvt.js:1077
+[37166941ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37166950ms] [LOG] [PostHog.js] send "$pageview" {uuid: 019f60d5-7352-7666-9e64-d6da3daa2074, event: $pageview, properties: Object, timestamp: Tue Jul 14 2026 21:33:49 GMT+0800 (Philippine Standard Time)} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37166950ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37166975ms] [LOG] [PostHog.js] Persistence loaded sessionStorage {$sdk_debug_extensions_init_method: synchronous, $sdk_debug_extensions_init_time_ms: 1, $referrer: http://localhost:3000/sign-in?redirect_url=http%3A…lhost%3A3000%2Feditor%2Fcmrk2v4qn0000d4kcren1mgrj, $referring_domain: localhost:3000, $sdk_debug_replay_remote_trigger_matching_config: null} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37166975ms] [LOG] [PostHog.js] set_config {config: Object, oldConfig: Object, newConfig: Object} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37166975ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37166975ms] [LOG] [PostHog.js] [Surveys] flags response received, isSurveysEnabled: false @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37166976ms] [LOG] [PostHog.js] [ExceptionAutocapture] enabled @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37166976ms] [LOG] [PostHog.js] [Surveys] Surveys loaded successfully @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37341734ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482
+[37341763ms] [LOG] [Fast Refresh] done in 105ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2482

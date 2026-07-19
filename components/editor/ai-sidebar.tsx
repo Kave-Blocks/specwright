@@ -16,11 +16,6 @@ interface AiSidebarProps {
   projectId: string
   /** Shared AI activity (status feed + working state), bridged out of the room. */
   aiActivity: AiActivity
-  /**
-   * When true, the panel docks as an in-flow column on desktop (sharing the
-   * row with the canvas) while staying a slide-over overlay on mobile.
-   */
-  docked?: boolean
 }
 
 /*
@@ -49,25 +44,16 @@ export function AiSidebar({
   onClose,
   projectId,
   aiActivity,
-  docked = false,
 }: AiSidebarProps) {
   return (
     <aside
       aria-hidden={!isOpen}
       className={cn(
-        // Card visuals shared by both variants.
-        "z-30 flex w-80 flex-col overflow-hidden rounded-2xl border border-surface-border bg-surface/95 shadow-2xl backdrop-blur-sm",
-        // Mobile overlay positioning (base) — docked mode overrides at md+.
-        "fixed right-3 top-[calc(var(--editor-navbar-height)+0.75rem)] h-[calc(100vh-var(--editor-navbar-height)-1.5rem)]",
-        docked
-          ? "transition-[transform,margin,opacity] duration-200 ease-out md:relative md:right-auto md:top-auto md:z-auto md:h-auto md:shrink-0"
-          : "transition-transform duration-200 ease-out",
+        "fixed right-3 top-[calc(var(--editor-navbar-height)+0.75rem)] z-30 flex h-[calc(100vh-var(--editor-navbar-height)-1.5rem)] w-80 flex-col overflow-hidden rounded-2xl border border-surface-border bg-surface/95 shadow-2xl backdrop-blur-sm",
+        "transition-transform duration-200 ease-out",
         isOpen
-          ? cn("translate-x-0", docked && "md:ml-3")
-          : cn(
-              "translate-x-[calc(100%+1rem)] pointer-events-none",
-              docked && "md:-ml-80 md:translate-x-0 md:opacity-0"
-            )
+          ? "translate-x-0"
+          : "pointer-events-none translate-x-[calc(100%+1rem)]"
       )}
     >
       <div className="flex items-center justify-between border-b border-surface-border px-4 py-3">

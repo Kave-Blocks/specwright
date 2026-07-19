@@ -74,7 +74,7 @@ export function PresenceAvatars() {
   const hasCollaborators = collaborators.length > 0
 
   return (
-    <div className="absolute top-4 right-4 z-10 flex items-center">
+    <div className="absolute top-4 right-[calc(1rem+var(--canvas-inset-right,0px))] z-10 flex items-center transition-[right] duration-200 ease-out">
       {hasCollaborators && (
         <div className="flex items-center -space-x-2">
           {visible.map((collaborator) => (

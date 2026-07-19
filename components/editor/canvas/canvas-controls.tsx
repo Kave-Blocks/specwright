@@ -83,7 +83,7 @@ export function CanvasControls() {
   useKeyboardShortcuts({ reactFlow, onUndo: undo, onRedo: redo })
 
   return (
-    <div className="absolute bottom-4 left-4 z-10">
+    <div className="absolute bottom-4 left-[calc(1rem+var(--canvas-inset-left,0px))] z-10 transition-[left] duration-200 ease-out">
       <div className="flex items-center gap-1 rounded-full border border-surface-border bg-surface/90 p-1.5 shadow-lg backdrop-blur">
         <ControlButton icon={ZoomOut} label="Zoom out" onClick={zoomOut} />
         <ControlButton icon={Maximize} label="Fit view" onClick={fitView} />

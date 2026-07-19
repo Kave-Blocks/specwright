@@ -123,6 +123,19 @@ React Flow `<Background>` component. Canvas sits on the base background color.
 
 shadcn/ui on top of Tailwind. No custom design system. Components live in `components/ui/`. Use the `shadcn` CLI to add new components rather than writing them from scratch.
 
+### AI Sidebar
+
+The **AI Architect** tab has two entries into the same generation path, never two paths:
+
+- the **freeform prompt** (auto-resizing textarea, green send button), and
+- **Guided brief** — a soft-pill chip below the input that opens the architecture interview.
+
+The interview is a stepped `rounded-3xl` Dialog: one question per step, help text under each heading, a step indicator (`Step n of m` plus a segment bar) visible throughout, and `Back` / `Skip` / `Next` in a footer. Every question is skippable; the final step is an editable Review of the composed Markdown brief, and that exact text is what gets submitted.
+
+**Option chips** (single- and multi-select) use the same three states as the canvas tool panel: selected `bg-accent-dim text-brand`, rest `bg-subtle text-copy-muted`, hover `bg-elevated`. Defaults render as already-selected, so skipping a question and choosing its default look the same — which is what they are. Every default that survives is disclosed in the brief's `## Assumptions` section rather than applied silently.
+
+`Generate` reuses the send action's accent: `bg-accent-green` with `text-(--bg-base)` (never light text on green, per the chat accent note above).
+
 ### Markdown
 
 Generated specs render with `react-markdown` + `remark-gfm` (tables and task lists are GitHub extensions, not CommonMark). `@tailwindcss/typography` is deliberately **not** installed — a prose plugin's light-mode defaults would fight this palette — so every element is styled explicitly against the tokens above in `components/editor/ai/spec-markdown.tsx`. Raw HTML is not rendered (no `rehype-raw`): spec content is LLM-authored, so any markup in it is escaped to visible text.

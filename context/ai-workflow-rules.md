@@ -61,8 +61,19 @@ Update the relevant context file whenever implementation changes:
 
 Progress state must reflect the actual state of the implementation, not the intended state.
 
+### Recording Progress
+
+Every unit of work gets its own file under `context/progress/`, never a new paragraph in `progress-tracker.md` itself:
+
+- A unit with a feature spec: `context/progress/NN-name.md`, same number and name as its `context/feature-specs/NN-name.md`. Include what was built, what deviated from the spec and why, what was verified and how, and what was left undone.
+- A later fix or QA follow-up against a unit that already shipped goes into that *same* file as a new `### Follow-up — YYYY-MM-DD` section. A follow-up that doesn't belong to one unit (spans several, or isn't spec-driven work) gets its own `context/progress/YYYY-MM-DD-short-slug.md` instead.
+- `progress-tracker.md` never grows a per-unit paragraph again. Add or update that unit's one row in `## Unit Index` — edit in place, never append a second row for the same unit.
+- `## Current Phase` holds only work genuinely in flight. The moment a unit ships, delete its bullet there.
+
+`context/progress/_TEMPLATE.md` documents the naming rule, the Follow-up convention, and the `Status`/`Verified` vocabularies used by the index.
+
 ## Before Moving To The Next Unit
 
 1. The current unit works end to end within its defined scope.
 2. No invariant defined in `architecture-context.md` was violated.
-3. `progress-tracker.md` reflects the completed work.
+3. `context/progress/NN-name.md` records the completed work, and the unit's `## Unit Index` row in `progress-tracker.md` is updated in place.

@@ -15,8 +15,8 @@ Read the following files in order before implementing or making any architectura
 3. `context/ui-context.md` — theme, colors, typography, canvas design, and component conventions
 4. `context/code-standards.md` — implementation rules and conventions
 5. `context/ai-workflow-rules.md` — development workflow, scoping rules, and delivery approach
-6. `context/progress-tracker.md` — current phase, completed work, open questions, and next steps
+6. `context/progress-tracker.md` — current phase, the unit index (status + link to full detail for every unit), open questions, and architecture decisions
 
-Update `context/progress-tracker.md` after each meaningful implementation change.
+After each meaningful implementation change, record it in `context/progress/NN-name.md` and update that unit's row in `progress-tracker.md`'s `## Unit Index` — never append a new paragraph to `progress-tracker.md` itself. See `Recording Progress` in `context/ai-workflow-rules.md`.
 
 If implementation changes the architecture, scope, or standards documented in the context files, update the relevant file before continuing.

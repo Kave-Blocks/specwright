@@ -1,0 +1,5 @@
+# 04 — project-dialogs
+
+Spec: [`context/feature-specs/04-project-dialogs.md`](../feature-specs/04-project-dialogs.md)
+
+- `04-project-dialogs.md` — Editor Home + the three dialogs (Create/Rename/Delete), the `useProjectActions` hook, sidebar per-project rename/delete actions on mock data, and the mobile backdrop scrim. Files: `components/editor/editor-shell.tsx` (client `isSidebarOpen` owner, instantiates `useProjectActions`, wraps subtree in `ProjectActionsProvider`, renders `<ProjectDialogs/>`, adds the `md:hidden` z-20 scrim below the z-30 sidebar), `app/editor/page.tsx` (Server Component home), `lib/projects.ts` (`Project`/`ProjectRole` types, `slugify()`, `mockProjects`), `hooks/use-project-actions.ts` (dialog + form + loading + local-list state; mutations are client-only mocks), `components/editor/project-actions-context.tsx`, `components/editor/dialogs/{create,rename,delete}-project-dialog.tsx`, `components/editor/project-dialogs.tsx`, `components/editor/new-project-button.tsx`, and `components/editor/project-sidebar.tsx` (owned/shared lists from context; rename/delete actions on owned projects only). Verified with `tsc --noEmit`, lint, build.

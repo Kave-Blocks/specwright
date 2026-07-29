@@ -17,14 +17,18 @@ Specwright is a real-time collaborative system design workspace. Users describe 
 
 1. User signs in.
 2. User creates or selects a project.
-3. User enters the project workspace.
-4. User optionally imports a starter system design template into the canvas.
-5. User prompts the AI to generate or extend the system design.
-6. AI generates nodes and edges in the shared canvas.
-7. Collaborators edit and refine the design.
-8. User triggers spec generation.
-9. App persists the generated Markdown spec.
-10. User reviews or downloads the spec.
+3. User enters the project workspace, landing on **Project Home** — a mode-selection view, not the canvas. Home shows three real mode cards (Architecture Interview, Canvas, Specs), each reflecting an actual signal (canvas saved / spec count) where one exists, plus a non-interactive "Planned" card for a future mode. No mode is locked behind another.
+4. From Home, the mode-switcher, or any mode card, the user reaches one of three equally-weighted, independently-addressable routes:
+   - **Architecture Interview** (`/discovery`) — a guided, fully skippable interview that composes a structured project brief and submits it in place of a one-line prompt.
+   - **Canvas** (`/canvas`) — the collaborative real-time system-design surface, plus a freeform AI chat panel.
+   - **Specs** (`/specs`) — a two-pane list + inline Markdown preview of generated specs.
+5. User optionally imports a starter system design template into the canvas.
+6. User prompts the AI to generate or extend the system design — from Canvas's freeform chat, or from the Architecture Interview's composed brief. Both submit through the same design path and land the result on Canvas.
+7. AI generates nodes and edges in the shared canvas.
+8. Collaborators edit and refine the design.
+9. User triggers spec generation from the Specs route.
+10. App persists the generated Markdown spec.
+11. User reviews or downloads the spec inline, without leaving the Specs route.
 
 ## Features
 

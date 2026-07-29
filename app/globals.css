@@ -106,6 +106,12 @@
      * rather than hardcoding the resulting value. */
     --editor-navbar-height: 3.5rem;
 
+    /* The Canvas route's own secondary control bar (save status, starter
+     * templates, AI chat toggle) sits below the shared navbar at h-12. The AI
+     * chat panel's fixed top offset/height derive from this rather than
+     * hardcoding the combined value. */
+    --canvas-toolbar-height: 3rem;
+
     /* shadcn semantic tokens mapped onto the dark theme */
     --background: var(--bg-base);
     --foreground: var(--text-primary);

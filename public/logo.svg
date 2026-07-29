@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="134" height="24" viewBox="0 0 134 24" fill="none" role="img" aria-label="Specwright">
+  <g stroke="#00c8d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16.75 5.5H9.5Q5.5 5.5 5.5 8.75Q5.5 12 9.5 12h5Q18.5 12 18.5 15.25Q18.5 18.5 14.5 18.5H7.25"/>
+    <circle cx="18.5" cy="5.5" r="1.75"/>
+    <circle cx="5.5" cy="18.5" r="1.75"/>
+  </g>
+  <text x="32" y="12" fill="#f0f0f4" font-family="Geist Sans, Geist, system-ui, -apple-system, Segoe UI, Helvetica Neue, sans-serif" font-size="17" font-weight="600" letter-spacing="-0.3" dominant-baseline="central">Specwright</text>
+</svg>

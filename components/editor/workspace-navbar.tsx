@@ -1,46 +1,55 @@
 "use client"
 
-import {
-  LayoutTemplate,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Share2,
-  Sparkles,
-} from "lucide-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { PanelLeftClose, PanelLeftOpen, Share2 } from "lucide-react"
 
-import { SaveStatusButton } from "@/components/editor/save-status-button"
 import { Button } from "@/components/ui/button"
+import { LogoMark } from "@/components/ui/logo"
 import { cn } from "@/lib/utils"
-import type { CanvasSaveStatus } from "@/types/canvas"
 
 interface WorkspaceNavbarProps {
+  /** Room/project id (room id ≡ project id) the mode-switcher links resolve against. */
+  roomId: string
   projectName: string
   isSidebarOpen: boolean
   onToggleSidebar: () => void
-  isAiSidebarOpen: boolean
-  onToggleAiSidebar: () => void
   onOpenShare: () => void
-  onOpenTemplates: () => void
-  saveStatus: CanvasSaveStatus
-  onSave: () => void
 }
 
+interface EditorMode {
+  label: string
+  href: string
+}
+
+/**
+ * Project-wide navbar, shared by every route under `/editor/[roomId]`: the
+ * logo mark, the project sidebar toggle, the project name, the mode-switcher,
+ * and Share. Canvas-specific controls (save status, starter templates, the AI
+ * chat toggle) live on the Canvas route itself — they are meaningful only
+ * while it's the active route, not project-wide chrome.
+ */
 export function WorkspaceNavbar({
+  roomId,
   projectName,
   isSidebarOpen,
   onToggleSidebar,
-  isAiSidebarOpen,
-  onToggleAiSidebar,
   onOpenShare,
-  onOpenTemplates,
-  saveStatus,
-  onSave,
 }: WorkspaceNavbarProps) {
+  const pathname = usePathname()
   const SidebarToggleIcon = isSidebarOpen ? PanelLeftClose : PanelLeftOpen
+
+  const modes: EditorMode[] = [
+    { label: "Home", href: `/editor/${roomId}` },
+    { label: "Architecture Interview", href: `/editor/${roomId}/discovery` },
+    { label: "Canvas", href: `/editor/${roomId}/canvas` },
+    { label: "Specs", href: `/editor/${roomId}/specs` },
+  ]
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 grid h-14 grid-cols-[1fr_auto_1fr] items-center border-b border-surface-border bg-surface px-3">
-      <div className="flex items-center justify-self-start">
+      <div className="flex min-w-0 items-center gap-2 justify-self-start">
+        <LogoMark className="ml-1 size-5 shrink-0 text-brand" />
         <Button
           variant="ghost"
           size="icon-sm"
@@ -49,35 +58,39 @@ export function WorkspaceNavbar({
         >
           <SidebarToggleIcon className="h-5 w-5" />
         </Button>
-      </div>
-
-      <div className="min-w-0 justify-self-center px-4">
         <p className="truncate font-heading text-sm font-medium text-copy-primary">
           {projectName}
         </p>
       </div>
 
-      <div className="flex items-center gap-1 justify-self-end">
-        <SaveStatusButton status={saveStatus} onSave={onSave} />
-        <Button variant="ghost" size="sm" onClick={onOpenTemplates}>
-          <LayoutTemplate className="h-4 w-4" />
-          Templates
-        </Button>
+      <nav
+        aria-label="Editor mode"
+        className="flex items-center gap-1 justify-self-center"
+      >
+        {modes.map((mode) => {
+          const isActive = pathname === mode.href
+          return (
+            <Link
+              key={mode.href}
+              href={mode.href}
+              aria-current={isActive ? "page" : undefined}
+              className={cn(
+                "rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none",
+                isActive
+                  ? "bg-accent-dim text-brand"
+                  : "text-copy-muted hover:bg-elevated hover:text-copy-primary"
+              )}
+            >
+              {mode.label}
+            </Link>
+          )
+        })}
+      </nav>
+
+      <div className="flex items-center justify-self-end">
         <Button variant="outline" size="sm" onClick={onOpenShare}>
           <Share2 className="h-4 w-4" />
           Share
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={onToggleAiSidebar}
-          aria-pressed={isAiSidebarOpen}
-          aria-label={
-            isAiSidebarOpen ? "Close AI assistant" : "Open AI assistant"
-          }
-          className={cn(isAiSidebarOpen && "bg-elevated text-ai-text")}
-        >
-          <Sparkles className="h-5 w-5" />
         </Button>
       </div>
     </header>

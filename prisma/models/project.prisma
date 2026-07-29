@@ -4,14 +4,17 @@ enum ProjectStatus {
 }
 
 model Project {
-  id             String        @id @default(cuid())
-  ownerId        String
-  name           String
-  description    String?
-  status         ProjectStatus @default(DRAFT)
-  canvasJsonPath String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id                String        @id @default(cuid())
+  ownerId           String
+  name              String
+  description       String?
+  status            ProjectStatus @default(DRAFT)
+  canvasJsonPath    String?
+  // Latest Discovery-composed brief, overwritten on each Generate. A single
+  // current value (like canvasJsonPath), not a history like ProjectSpec.
+  architectureBrief String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   collaborators ProjectCollaborator[]
   specs         ProjectSpec[]

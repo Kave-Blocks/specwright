@@ -1,36 +1,42 @@
-import { redirect } from "next/navigation"
-
-import { AccessDenied } from "@/components/editor/access-denied"
-import { EditorWorkspace } from "@/components/editor/editor-workspace"
+import { ProjectHomeView } from "@/components/editor/home/project-home-view"
+import { prisma } from "@/lib/prisma"
 import { getAccessibleProject, getClerkIdentity } from "@/lib/project-access"
-import { getEditorHomeProjects } from "@/lib/projects-data"
 
-interface EditorRoomPageProps {
+interface ProjectHomePageProps {
   params: Promise<{ roomId: string }>
 }
 
-export default async function EditorRoomPage({ params }: EditorRoomPageProps) {
+/**
+ * Project Home — the landing view for `/editor/[roomId]`. Reads three real,
+ * already-available signals (whether Discovery has saved a brief, whether the
+ * canvas has been saved, and a real generated-spec count) rather than
+ * inventing status that isn't backed by data.
+ *
+ * `identity`/`project` are re-derived here (not passed down from the layout,
+ * which Next.js layouts cannot do) — but both calls are wrapped in `cache()`
+ * in `lib/project-access.ts`, so this shares the layout's lookup rather than
+ * re-querying. The null branches below are unreachable in practice: the
+ * layout already redirects or renders `AccessDenied` before this page runs.
+ */
+export default async function ProjectHomePage({ params }: ProjectHomePageProps) {
   const { roomId } = await params
 
   const identity = await getClerkIdentity()
-  if (!identity) {
-    redirect("/sign-in")
-  }
+  if (!identity) return null
 
   const project = await getAccessibleProject(roomId, identity)
-  if (!project) {
-    return <AccessDenied />
-  }
+  if (!project) return null
 
-  const { ownedProjects, sharedProjects } = await getEditorHomeProjects()
+  const specCount = await prisma.projectSpec.count({
+    where: { projectId: project.id },
+  })
 
   return (
-    <EditorWorkspace
-      projectId={project.id}
-      projectName={project.name}
-      isOwner={project.ownerId === identity.userId}
-      ownedProjects={ownedProjects}
-      sharedProjects={sharedProjects}
+    <ProjectHomeView
+      roomId={roomId}
+      hasBrief={Boolean(project.architectureBrief)}
+      hasCanvas={Boolean(project.canvasJsonPath)}
+      specCount={specCount}
     />
   )
 }

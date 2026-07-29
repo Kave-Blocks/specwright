@@ -1,0 +1,70 @@
+[62468682ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[62468695ms] [LOG] [HMR] connected @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[62468821ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[62468832ms] [LOG] [Fast Refresh] done in 111ms @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[62469018ms] [WARNING] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[62469502ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:3001/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3001%2Feditor%2Fqa-project-hub-8bjqab%2Fspecs:0
+[63352754ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[63352834ms] [LOG] [Fast Refresh] done in 161ms @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[63361689ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[63361718ms] [LOG] [Fast Refresh] done in 55ms @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[63366654ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[63366696ms] [LOG] [Fast Refresh] done in 115ms @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[63372502ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[63372586ms] [ERROR] ./components/editor/home/project-home-view.tsx:84:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  82 |     </div>
+  83 |   )
+> 84 | }
+     | ^
+  85 |
+  86 | interface ModeCardProps {
+  87 |   href: string
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./components/editor/home/project-home-view.tsx
+    ./app/editor/[roomId]/page.tsx @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:3318
+[63372699ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[63372705ms] [ERROR] ./components/editor/home/project-home-view.tsx:84:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  82 |     </div>
+  83 |   )
+> 84 | }
+     | ^
+  85 |
+  86 | interface ModeCardProps {
+  87 |   href: string
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./components/editor/home/project-home-view.tsx
+    ./app/editor/[roomId]/page.tsx @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:3318
+[63392742ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[63392773ms] [LOG] [Fast Refresh] done in 31ms @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[63432790ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[63432807ms] [LOG] [Fast Refresh] done in 118ms @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[63732057ms] [ERROR] WebSocket connection to 'ws://localhost:3001/_next/webpack-hmr?id=uuTz6NXxr8vQ9WpC-7M4y' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[63733063ms] [LOG] [HMR] connected @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[63733850ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[63733864ms] [LOG] [HMR] connected @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[63734182ms] [WARNING] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[63734641ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:3001/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3001%2Feditor%2Fqa-project-hub-8bjqab%2Fspecs:0
+[67096009ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[67096270ms] [LOG] [Fast Refresh] done in 338ms @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_1ybzpk2._.js:2477
+[71677229ms] [ERROR] WebSocket connection to 'ws://localhost:3001/_next/webpack-hmr?id=vt3XskSOlsZEMSW8q6Vy5' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[71678232ms] [ERROR] WebSocket connection to 'ws://localhost:3001/_next/webpack-hmr?id=vt3XskSOlsZEMSW8q6Vy5' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[71679234ms] [ERROR] WebSocket connection to 'ws://localhost:3001/_next/webpack-hmr?id=vt3XskSOlsZEMSW8q6Vy5' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[71680236ms] [ERROR] WebSocket connection to 'ws://localhost:3001/_next/webpack-hmr?id=vt3XskSOlsZEMSW8q6Vy5' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[71681242ms] [ERROR] WebSocket connection to 'ws://localhost:3001/_next/webpack-hmr?id=vt3XskSOlsZEMSW8q6Vy5' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[71686249ms] [ERROR] WebSocket connection to 'ws://localhost:3001/_next/webpack-hmr?id=vt3XskSOlsZEMSW8q6Vy5' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[71691254ms] [ERROR] WebSocket connection to 'ws://localhost:3001/_next/webpack-hmr?id=vt3XskSOlsZEMSW8q6Vy5' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[71696279ms] [ERROR] WebSocket connection to 'ws://localhost:3001/_next/webpack-hmr?id=vt3XskSOlsZEMSW8q6Vy5' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[71701312ms] [ERROR] WebSocket connection to 'ws://localhost:3001/_next/webpack-hmr?id=vt3XskSOlsZEMSW8q6Vy5' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[71706354ms] [ERROR] WebSocket connection to 'ws://localhost:3001/_next/webpack-hmr?id=vt3XskSOlsZEMSW8q6Vy5' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[71711500ms] [ERROR] WebSocket connection to 'ws://localhost:3001/_next/webpack-hmr?id=vt3XskSOlsZEMSW8q6Vy5' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422
+[71716794ms] [ERROR] WebSocket connection to 'ws://localhost:3001/_next/webpack-hmr?id=vt3XskSOlsZEMSW8q6Vy5' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_client_0r5nbpw._.js:13422

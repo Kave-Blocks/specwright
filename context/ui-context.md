@@ -123,14 +123,14 @@ React Flow `<Background>` component. Canvas sits on the base background color.
 
 shadcn/ui on top of Tailwind. No custom design system. Components live in `components/ui/`. Use the `shadcn` CLI to add new components rather than writing them from scratch.
 
-### AI Sidebar
+### AI Chat Panel (Canvas)
 
-The **AI Architect** tab has two entries into the same generation path, never two paths:
+The Canvas route's AI chat panel (`components/editor/ai/ai-chat-panel.tsx`) renders the AI Architect chat directly — no tab chrome. It is one of two entries into the same generation path (`useDesignSubmit`), never two paths:
 
-- the **freeform prompt** (auto-resizing textarea, green send button), and
-- **Guided brief** — a soft-pill chip below the input that opens the architecture interview.
+- the **freeform prompt** (auto-resizing textarea, green send button), on Canvas, and
+- the **Architecture Interview**, its own full-page route (`/editor/[roomId]/discovery`) rather than a dialog launched from the chat — see Layout Patterns above. A small text link from the chat panel ("Prefer a guided flow? Discovery →") points to it.
 
-The interview is a stepped `rounded-3xl` Dialog: one question per step, help text under each heading, a step indicator (`Step n of m` plus a segment bar) visible throughout, and `Back` / `Skip` / `Next` in a footer. Every question is skippable; the final step is an editable Review of the composed Markdown brief, and that exact text is what gets submitted.
+The interview's step shell: one question per step, help text under each heading, a step indicator (`Step n of m` plus a segment bar) visible throughout, and `Back` / `Skip` / `Next` in a footer. Every question is skippable; the final step is an editable Review of the composed Markdown brief, and that exact text is what gets submitted.
 
 **Option chips** (single- and multi-select) use the same three states as the canvas tool panel: selected `bg-accent-dim text-brand`, rest `bg-subtle text-copy-muted`, hover `bg-elevated`. Defaults render as already-selected, so skipping a question and choosing its default look the same — which is what they are. Every default that survives is disclosed in the brief's `## Assumptions` section rather than applied silently.
 
@@ -142,20 +142,47 @@ Generated specs render with `react-markdown` + `remark-gfm` (tables and task lis
 
 ## Layout Patterns
 
-- Editor workspace: full-viewport layout — floating sidebar overlay on the left, center canvas, slide-over AI sidebar on the right.
-- Sidebars: floating overlay with dark semi-transparent background and subtle border.
-- Modals and dialogs: centered overlay, `rounded-3xl`, dark background with backdrop blur.
-- Navbar: top bar with dark background and bottom border.
+- Editor room: a project-wide shell (`EditorRoomShell`) owns the navbar, the floating project sidebar overlay, and the create/rename/delete + share dialogs — shared by every route under `/editor/[roomId]`. Route content renders below the navbar, full-bleed by default. Canvas stays literally full-bleed (only its floating chrome clears the sidebar, via `--canvas-inset-left`/`-right`); Project Home, Architecture Interview, and Specs instead shift their own root content over with `pl-(--canvas-inset-left,0px)` (`transition-[padding-left] duration-200 ease-out` to match the sidebar's own open/close animation), since their controls sit in document flow rather than floating and would otherwise render underneath the sidebar when it's open.
+- **Project Home** (`/editor/[roomId]`) — a centered column of mode cards ("Where do you want to work?"), not the canvas. Cards are `rounded-2xl` links with an icon, title, description, and a real status line where one exists (Canvas: "Canvas saved" / "Empty canvas"; Specs: a real generated-spec count). The fourth card, a placeholder for a future mode, is non-interactive: reduced opacity, no hover state, a muted "Planned" badge instead of a chevron.
+- **Architecture Interview** (`/editor/[roomId]/discovery`) — a full-page version of the guided interview (a stepped form, not a dialog): heading + help text, a step indicator with a segment bar, question content in a `ScrollArea`, and a Back/Skip/Next(/Generate on Review) footer. A link back to Project Home sits above it.
+- **Canvas** (`/editor/[roomId]/canvas`) — the collaborative canvas surface, with its own secondary control bar (save status, starter templates, AI chat toggle — `h-[var(--canvas-toolbar-height)]`, directly under the shared navbar) and a slide-over AI chat panel on the right.
+- **Specs** (`/editor/[roomId]/specs`) — a two-pane layout: a spec list on the left (generate action + `ScrollArea`), an inline Markdown preview of the selected spec on the right (reusing `spec-markdown.tsx`'s rendering, not dialog chrome).
+- Floating overlays (project sidebar, AI chat panel): dark semi-transparent background and subtle border, fixed relative to the viewport.
+- Modals and dialogs (create/rename/delete project, share): centered overlay, `rounded-3xl`, dark background with backdrop blur.
+- Navbar: top bar with dark background and bottom border, holding a mode-switcher (Home / Architecture Interview / Canvas / Specs) center-aligned — reuses the AI chat's tab treatment (`text-copy-muted`, active `bg-accent-dim text-brand`).
 
 ### Layout Tokens
 
 Shared chrome dimensions live as CSS custom properties in `globals.css` so dependent layout math stays in one place.
 
-| Role                | CSS Variable             | Value    |
-| ------------------- | ------------------------ | -------- |
-| Editor navbar height | `--editor-navbar-height` | `3.5rem` |
+| Role                  | CSS Variable              | Value    |
+| --------------------- | -------------------------- | -------- |
+| Editor navbar height  | `--editor-navbar-height`   | `3.5rem` |
+| Canvas toolbar height | `--canvas-toolbar-height`  | `3rem`   |
 
-Anything positioned relative to the navbar (the floating sidebar's top offset and height) derives from `--editor-navbar-height` rather than hardcoding the resulting number.
+Anything positioned relative to the navbar or the Canvas route's own secondary toolbar (the AI chat panel's top offset and height, the floating sidebar's top offset) derives from these tokens rather than hardcoding the resulting number. `--canvas-inset-left`/`--canvas-inset-right` are inline custom properties (not tokens in `globals.css`) set by the project sidebar's and AI chat panel's open state respectively, and cascade down to whatever needs to clear them: the floating canvas chrome (zoom controls, presence avatars) on the Canvas route, and the root content padding on Project Home, Architecture Interview, and Specs.
+
+## Brand
+
+The Specwright mark is an **"S" traced as a smooth-step canvas edge**, terminating in two connection-node rings. It is drawn in the canvas's own visual grammar — the same orthogonal smooth-step routing as `CanvasEdgeRenderer`, and rings that read as the connection handles in the section above — on Lucide's 24px grid at stroke-width 2, so it sits beside the icon set as a peer rather than a foreign object.
+
+`components/ui/logo.tsx` exports two components:
+
+| Component  | Renders                    | Use                                              |
+| ---------- | -------------------------- | ------------------------------------------------ |
+| `LogoMark` | Mark only, `currentColor`  | Tight chrome — workspace navbar, favicons, badges |
+| `Logo`     | Mark + "Specwright" wordmark | Anywhere the product needs naming                |
+
+Rules:
+
+- **The mark carries no fill.** Its path stops at each ring's edge so the stroke flows into it, rather than punching the ring out with a background color. It therefore inherits `currentColor` and is safe on any surface — do not add a background-colored fill to "clean up" the rings, which silently breaks it on every surface but the one it was tuned for.
+- **Color it with a text utility on the parent** (`text-brand` is the default in `Logo`), never a hardcoded hex.
+- **`Logo` scales from a single text utility.** The wordmark inherits its size from the root, so `className="text-lg"` scales the lockup; `markClassName` sizes the mark independently.
+- **Do not wrap the mark in a filled brand tile.** It is a stroke mark and reads as cyan-on-dark, consistent with the feature icons in `auth-layout.tsx`.
+
+Static assets live in `public/` for contexts that cannot render a React component: `logo-mark.svg` (`currentColor`), `logo.svg` (lockup), and `logo-gradient.svg` (brand cyan → AI indigo, for hero/marketing placements only — below ~48px the gradient reads as undifferentiated blue). `app/icon.svg` is the favicon via Next's file convention, so no `metadata.icons` entry is needed.
+
+`logo.svg`'s wordmark is live `<text>`, not outlined paths — it resolves Geist Sans where available and falls back to `system-ui`. For pixel-identical output in a foreign renderer (OG images, decks), convert the text to paths.
 
 ## Icons
 

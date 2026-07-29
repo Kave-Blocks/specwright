@@ -2,12 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRealtimeRun } from "@trigger.dev/react-hooks"
-import { AlertCircle, Download, FileText, Loader2, Sparkles } from "lucide-react"
-
 import {
-  formatSpecDate,
-  SpecPreviewDialog,
-} from "@/components/editor/ai/spec-preview-dialog"
+  AlertCircle,
+  Download,
+  FileText,
+  Loader2,
+  Sparkles,
+} from "lucide-react"
+
+import { SpecMarkdown } from "@/components/editor/ai/spec-markdown"
 import { useCanvasGraph } from "@/components/editor/canvas/canvas-graph-context"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -21,8 +24,10 @@ import {
   MAX_NODES,
 } from "@/lib/spec-agent/payload"
 import { isFinishedRunStatus } from "@/lib/trigger-run"
+import { cn } from "@/lib/utils"
 import type { generateSpec } from "@/trigger/generate-spec"
 import type { ProjectSpecSummary } from "@/types/specs"
+import { specDownloadUrl } from "@/types/specs"
 
 const EMPTY_CANVAS_ERROR =
   "Add some nodes to the canvas before generating a spec."
@@ -30,6 +35,7 @@ const TOO_LARGE_ERROR =
   "This canvas is too large to turn into a spec. Try trimming it down."
 const START_ERROR = "Couldn’t start the spec. Please try again."
 const RUN_FAILED_ERROR = "Specwright couldn’t finish the spec. Please try again."
+const CONTENT_ERROR = "Couldn’t load this spec. Please try again."
 
 /** Status line while a spec run is in flight but has published nothing yet. */
 const WORKING_FALLBACK = "Specwright is working…"
@@ -41,104 +47,160 @@ interface ActiveRun {
   token: string
 }
 
+/** e.g. "Jul 12, 2026 at 9:41 AM". */
+function formatSpecDate(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  })
+}
+
 /**
- * The "Specs" tab: generate a spec from the canvas, then browse, preview, and
- * download the ones this project already has.
+ * The `/editor/[roomId]/specs` route: a list of the project's specs on the
+ * left, an inline Markdown preview of the selected one on the right.
  *
- * The list is metadata only (`GET /api/projects/{id}/specs`) — a spec's Markdown
- * is fetched on demand by the preview and dropped when it closes, and the
- * private Blob URL never reaches the client at all.
+ * Generating and listing behave exactly as they did in the former sidebar
+ * `specs-tab.tsx` — only the preview changed, from a modal (`SpecPreviewDialog`)
+ * to this inline pane, reusing `spec-markdown.tsx`'s rendering rather than
+ * dialog chrome.
  */
-export function SpecsTab({ projectId }: { projectId: string }) {
+export function SpecsView({ projectId }: { projectId: string }) {
   const { specs, isLoading, error: listError, refresh } = useProjectSpecs(projectId)
-  const [selected, setSelected] = useState<ProjectSpecSummary | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  // Derived, not synced: falling back to the newest spec (`specs[0]`, the list
+  // is already newest-first) whenever nothing is explicitly selected — or the
+  // explicit selection disappeared from a refreshed list — needs no effect,
+  // since it's a pure function of `specs` and `selectedId` on every render.
+  const selected =
+    specs.find((spec) => spec.id === selectedId) ?? specs[0] ?? null
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
-      <div className="p-3">
-        <GenerateSpecButton projectId={projectId} onGenerated={refresh} />
+    <div className="flex h-full flex-1 overflow-hidden pl-(--canvas-inset-left,0px) transition-[padding-left] duration-200 ease-out">
+      <div className="flex w-80 shrink-0 flex-col overflow-hidden border-r border-surface-border">
+        <div className="p-3">
+          <GenerateSpecButton projectId={projectId} onGenerated={refresh} />
+        </div>
+
+        <ScrollArea className="flex-1">
+          <div className="flex flex-col gap-2 px-3 pb-3">
+            {isLoading && specs.length === 0 ? (
+              <div className="flex items-center justify-center gap-2 py-10 text-xs text-copy-muted">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Loading specs…</span>
+              </div>
+            ) : listError ? (
+              <p
+                role="alert"
+                className="flex items-center justify-center gap-1.5 py-10 text-xs text-error"
+              >
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                <span>{listError}</span>
+              </p>
+            ) : specs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 px-6 py-10 text-center">
+                <div className="flex size-12 items-center justify-center rounded-2xl bg-subtle text-brand">
+                  <FileText className="h-6 w-6" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-copy-primary">
+                    No specs yet
+                  </p>
+                  <p className="text-xs text-copy-muted">
+                    Generate one to turn your canvas into a technical spec.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              specs.map((spec) => (
+                <SpecCard
+                  key={spec.id}
+                  spec={spec}
+                  projectId={projectId}
+                  isSelected={spec.id === selected?.id}
+                  onSelect={() => setSelectedId(spec.id)}
+                />
+              ))
+            )}
+          </div>
+        </ScrollArea>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-2 px-3 pb-3">
-          {isLoading && specs.length === 0 ? (
-            <div className="flex items-center justify-center gap-2 py-10 text-xs text-copy-muted">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              <span>Loading specs…</span>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {selected ? (
+          <SpecPreviewPane projectId={projectId} spec={selected} />
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-subtle text-copy-muted">
+              <FileText className="h-6 w-6" />
             </div>
-          ) : listError ? (
-            <p
-              role="alert"
-              className="flex items-center justify-center gap-1.5 py-10 text-xs text-error"
-            >
-              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-              <span>{listError}</span>
-            </p>
-          ) : specs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 px-6 py-10 text-center">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-subtle text-brand">
-                <FileText className="h-6 w-6" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-copy-primary">
-                  No specs yet
-                </p>
-                <p className="text-xs text-copy-muted">
-                  Generate one to turn your canvas into a technical spec.
-                </p>
-              </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-copy-primary">
+                No spec selected
+              </p>
+              <p className="text-xs text-copy-muted">
+                Generate a spec, or pick one from the list to preview it here.
+              </p>
             </div>
-          ) : (
-            specs.map((spec) => (
-              <SpecCard
-                key={spec.id}
-                spec={spec}
-                projectId={projectId}
-                onSelect={() => setSelected(spec)}
-              />
-            ))
-          )}
-        </div>
-      </ScrollArea>
-
-      <SpecPreviewDialog
-        projectId={projectId}
-        spec={selected}
-        onClose={() => setSelected(null)}
-      />
+          </div>
+        )}
+      </div>
     </div>
   )
 }
 
 /**
- * One spec in the list: click anywhere to preview, or download it directly.
- *
- * The card is the button (so Enter/Space open the preview), and the download
- * control is a sibling rather than a nested button — nesting one interactive
- * element inside another is invalid and breaks keyboard navigation.
+ * One spec in the list — click to preview it inline on the right, or download
+ * it directly. The card is the button (so Enter/Space select it), and the
+ * download control is a sibling rather than a nested button — nesting one
+ * interactive element inside another is invalid and breaks keyboard
+ * navigation.
  */
 function SpecCard({
   spec,
   projectId,
+  isSelected,
   onSelect,
 }: {
   spec: ProjectSpecSummary
   projectId: string
+  isSelected: boolean
   onSelect: () => void
 }) {
   return (
-    <div className="group relative flex items-center gap-3 rounded-xl border border-surface-border bg-elevated transition-colors focus-within:border-subtle-border hover:border-subtle-border">
+    <div
+      className={cn(
+        "group relative flex items-center gap-3 rounded-xl border transition-colors",
+        isSelected
+          ? "border-brand bg-accent-dim"
+          : "border-surface-border bg-elevated hover:border-subtle-border"
+      )}
+    >
       <button
         type="button"
         onClick={onSelect}
+        aria-current={isSelected}
         aria-label={`Preview ${spec.filename}`}
         className="flex min-w-0 flex-1 items-center gap-3 rounded-xl p-3 text-left focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
       >
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-subtle text-brand">
+        <span
+          className={cn(
+            "flex size-9 shrink-0 items-center justify-center rounded-lg",
+            isSelected ? "bg-surface text-brand" : "bg-subtle text-brand"
+          )}
+        >
           <FileText className="h-4 w-4" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium text-copy-primary">
+          <span
+            className={cn(
+              "block truncate text-sm font-medium",
+              isSelected ? "text-brand" : "text-copy-primary"
+            )}
+          >
             {spec.filename}
           </span>
           <span className="mt-0.5 block truncate text-xs text-copy-muted">
@@ -159,6 +221,118 @@ function SpecCard({
       </Button>
     </div>
   )
+}
+
+/** The selected spec's Markdown, fetched on selection and dropped on deselect. */
+function SpecPreviewPane({
+  projectId,
+  spec,
+}: {
+  projectId: string
+  spec: ProjectSpecSummary
+}) {
+  const { content, isLoading, error } = useSpecContent(projectId, spec.id)
+
+  return (
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="flex items-center justify-between gap-3 border-b border-surface-border px-5 py-4">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-copy-primary">
+            {spec.filename}
+          </p>
+          <p className="text-xs text-copy-muted">
+            Generated {formatSpecDate(spec.createdAt)}
+          </p>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => downloadSpec(projectId, spec.id, spec.filename)}
+          className="shrink-0 bg-brand text-white hover:bg-brand/90"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Download
+        </Button>
+      </div>
+
+      <ScrollArea className="flex-1 overflow-hidden">
+        <div className="px-5 py-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center gap-2 py-12 text-xs text-copy-muted">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <span>Loading spec…</span>
+            </div>
+          ) : error ? (
+            <p
+              role="alert"
+              className="flex items-center justify-center gap-1.5 py-12 text-xs text-error"
+            >
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+              <span>{error}</span>
+            </p>
+          ) : (
+            <SpecMarkdown content={content ?? ""} />
+          )}
+        </div>
+      </ScrollArea>
+    </div>
+  )
+}
+
+interface SpecContent {
+  content: string | null
+  isLoading: boolean
+  error: string | null
+}
+
+/**
+ * Fetch one spec's Markdown through the access-checked download route — the
+ * only endpoint a client may read a spec through. Its `Content-Disposition:
+ * attachment` only governs a browser *navigation*; a `fetch` reads the body as
+ * text, so no Blob URL is ever touched from here and no second route is
+ * needed.
+ *
+ * The content lives in this hook's state, which drops it the moment the
+ * selection changes (a fresh `specId` re-runs the effect).
+ */
+function useSpecContent(projectId: string, specId: string): SpecContent {
+  const [content, setContent] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function load() {
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const response = await fetch(specDownloadUrl(projectId, specId), {
+          signal: controller.signal,
+        })
+        if (!response.ok) {
+          throw new Error(`Spec fetch failed (${response.status})`)
+        }
+
+        setContent(await response.text())
+      } catch (fetchError) {
+        // A superseded request is aborted on purpose — not an error.
+        if (controller.signal.aborted) return
+        console.error(fetchError)
+        setError(CONTENT_ERROR)
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void load()
+    return () => controller.abort()
+  }, [projectId, specId])
+
+  return { content, isLoading, error }
 }
 
 /**

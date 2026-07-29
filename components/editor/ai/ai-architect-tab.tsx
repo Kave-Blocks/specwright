@@ -1,19 +1,17 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react"
-import { useRealtimeRun } from "@trigger.dev/react-hooks"
-import { AlertCircle, Bot, Loader2, Send, Sparkles } from "lucide-react"
+import Link from "next/link"
+import { useEffect, useRef, useState, type KeyboardEvent } from "react"
+import { AlertCircle, Bot, Loader2, Send } from "lucide-react"
 
 import type { AiActivity } from "@/components/editor/ai/ai-activity-context"
-import { ArchitectureInterview } from "@/components/editor/ai/architecture-interview"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Textarea } from "@/components/ui/textarea"
 import { useAiChat, type AiChatMessage } from "@/hooks/use-ai-chat"
+import { useDesignSubmit } from "@/hooks/use-design-submit"
 import { useRoomReady } from "@/hooks/use-room-ready"
-import { isFinishedRunStatus } from "@/lib/trigger-run"
 import { cn } from "@/lib/utils"
-import type { designAgent } from "@/trigger/design-agent"
 
 /** Prompt suggestions shown in the empty state. */
 const STARTER_PROMPTS = [
@@ -22,36 +20,15 @@ const STARTER_PROMPTS = [
   "Build a CI/CD pipeline",
 ] as const
 
-/** AI reply posted when a run finishes but the model summarized nothing. */
-const DESIGN_DONE_MESSAGE = "Done — your architecture is on the canvas."
-
-/** AI reply posted when the run itself fails, or can no longer be tracked. */
-const DESIGN_FAILED_MESSAGE =
-  "Specwright couldn’t finish the design. Please try again."
-
-/** AI reply posted when the design request never starts. */
-const DESIGN_START_ERROR_MESSAGE =
-  "Specwright couldn’t start the design. Please try again."
-
 /**
  * Shown inline (not in the feed) — the one error the chat feed can't carry, by
  * definition: the write to the feed is what failed.
  */
-const SEND_ERROR_MESSAGE = "Couldn’t send your message. Please try again."
-
-/** Shown inline when the conversation itself failed to load (see `useAiChat`). */
 const LOAD_ERROR_MESSAGE =
   "Couldn’t load the conversation. Reload the page to try again."
 
 /** Status-strip line while the AI works but hasn't published any text yet. */
 const WORKING_FALLBACK = "Specwright is working…"
-
-/** The design run this client is currently tracking. */
-interface ActiveRun {
-  runId: string
-  /** Run-scoped read token from the trigger route, for `useRealtimeRun`. */
-  publicToken: string
-}
 
 interface AiArchitectTabProps {
   /** The room/project id the design task should generate into (room id ≡ project id). */
@@ -67,7 +44,7 @@ interface AiArchitectTabProps {
  * Liveblocks fetches a feed's first page over the WebSocket. A fetch issued
  * before the socket connects is dropped from the flush buffer, rejects after a
  * 5s timeout, and — because the feed resource is created with `autoRetry: false`
- * — that error is cached for the lifetime of the client. The sidebar mounts with
+ * — that error is cached for the lifetime of the client. The panel mounts with
  * the workspace, well before the room connects (the auth endpoint has to check
  * Clerk, hit the database, and ensure the room and its feeds first), so mounting
  * the chat immediately meant the history *never* loaded, while writing new
@@ -94,175 +71,50 @@ export function AiArchitectTab({ projectId, aiActivity }: AiArchitectTabProps) {
  * The chat itself: the room's shared conversation (the `ai-chat` Liveblocks feed,
  * so everyone sees every message) above an auto-resizing input.
  *
- * Submitting publishes the prompt to the feed and starts the durable design task
- * (`POST /api/ai/design`), which returns the run id plus a run-scoped token. The
- * run is then tracked live with `useRealtimeRun`: the input stays disabled and
- * the send button spins until it finishes, at which point Specwright's reply is
- * pushed to the feed. Progress text rides the separate `ai-status-feed` (shown in
- * the status strip above the input), so it never lands in the chat — and the
- * nodes and edges the task writes arrive on their own through Liveblocks, which
- * is why nothing here touches the canvas.
+ * Submitting hands the prompt to `useDesignSubmit`, which publishes it to the
+ * feed and starts the durable design task, tracking the run live: the input
+ * stays disabled and the send button spins until it finishes, at which point
+ * Specwright's reply is pushed to the feed. Progress text rides the separate
+ * `ai-status-feed` (shown in the status strip above the input), so it never
+ * lands in the chat — and the nodes and edges the task writes arrive on their
+ * own through Liveblocks, which is why nothing here touches the canvas.
  */
 function AiArchitectChat({ projectId, aiActivity }: AiArchitectTabProps) {
   const [input, setInput] = useState("")
-  const [pending, setPending] = useState(false)
-  const [activeRun, setActiveRun] = useState<ActiveRun | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [interviewOpen, setInterviewOpen] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
-  /** Guards the completion reply, so a run can only ever be settled once. */
-  const settledRunRef = useRef<string | null>(null)
   const {
     messages,
     isLoading,
     error: loadError,
     selfId,
-    sendMessage,
-    sendAssistantMessage,
   } = useAiChat()
-
-  // Track the design run with the token the trigger route handed back. `id` is
-  // keyed to the run so the previous run's cached state is dropped rather than
-  // bleeding into the next one; `enabled` keeps the hook idle (and quiet about
-  // the missing token) while no run is in flight.
-  const { run, error: runError } = useRealtimeRun<typeof designAgent>(
-    activeRun?.runId,
-    {
-      accessToken: activeRun?.publicToken,
-      enabled: activeRun !== null,
-      id: activeRun?.runId,
-      // The payload is just the prompt we already have — don't ship it back.
-      skipColumns: ["payload"],
-    }
-  )
+  const { send, busy: submitBusy, error, clearError } = useDesignSubmit(projectId)
 
   const isEmpty = messages.length === 0
   // A message needs a sender, so sending waits for the room connection.
   const canSend = selfId !== null
-  // Busy while this client's request is in flight, its run is still going, OR
-  // any AI agent is working in the room (shared presence) — so a collaborator's
-  // generation locks the input too.
-  const busy = pending || activeRun !== null || aiActivity.isWorking
+  // Busy while this client's request/run is in flight, OR any AI agent is
+  // working in the room (shared presence) — so a collaborator's generation
+  // locks the input too.
+  const busy = submitBusy || aiActivity.isWorking
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "nearest" })
   }, [messages.length])
 
-  /** Post Specwright's closing line, then drop the run (re-enabling the input). */
-  const settleRun = useCallback(
-    async (content: string) => {
-      try {
-        await sendAssistantMessage(content)
-      } catch (publishError) {
-        console.error(publishError)
-        setError(SEND_ERROR_MESSAGE)
-      } finally {
-        setActiveRun(null)
-      }
-    },
-    [sendAssistantMessage]
-  )
-
-  // Close out the run once it finishes. Deliberately not `useRealtimeRun`'s
-  // `onComplete`: that fires at most once per mount, so a second prompt in the
-  // same session would never settle and the input would stay disabled forever.
-  useEffect(() => {
-    if (!activeRun) return
-    if (settledRunRef.current === activeRun.runId) return
-
-    const isFinished =
-      run?.id === activeRun.runId && isFinishedRunStatus(run.status)
-    // A subscription that errors out also ends the run's tracking — otherwise a
-    // dropped connection would leave the chat locked.
-    if (!isFinished && !runError) return
-
-    const runId = activeRun.runId
-    const summary = run?.output?.planSummary?.trim()
-    const content =
-      run?.status === "COMPLETED"
-        ? summary || DESIGN_DONE_MESSAGE
-        : DESIGN_FAILED_MESSAGE
-
-    // Deferred so the settle never sets state synchronously inside the effect.
-    // The guard is claimed inside the timer, not before it: a later realtime
-    // update would otherwise cancel this timer while the guard already read as
-    // settled, and the run would hang with the input disabled.
-    const timer = setTimeout(() => {
-      settledRunRef.current = runId
-      void settleRun(content)
-    }, 0)
-    return () => clearTimeout(timer)
-  }, [activeRun, run, runError, settleRun])
-
-  /**
-   * The single submit path: publish the prompt to the shared chat feed, start
-   * the durable design task, and track the run. Both entries use it unchanged —
-   * the freeform input and the guided interview differ only in the text they
-   * hand it.
-   *
-   * Resolves `true` once the run is under way, which is what lets the interview
-   * dialog close on a successful hand-off (and stay open, with its error shown,
-   * on a failed one). The freeform callers ignore it.
-   */
-  async function send(text: string): Promise<boolean> {
+  async function handleSend(text: string) {
     const trimmed = text.trim()
-    if (!trimmed || busy || !canSend) return false
-
-    setPending(true)
-    setError(null)
-
-    try {
-      // Publish to the shared chat feed first — the input only clears once the
-      // message is really in the room.
-      await sendMessage(trimmed)
-      setInput("")
-    } catch (sendError) {
-      console.error(sendError)
-      setError(SEND_ERROR_MESSAGE)
-      setPending(false)
-      return false
-    }
-
-    try {
-      const response = await fetch("/api/ai/design", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: trimmed, roomId: projectId, projectId }),
-      })
-      if (!response.ok) {
-        throw new Error(`Design request failed (${response.status})`)
-      }
-
-      const { runId, publicToken } = (await response.json()) as {
-        runId?: string
-        publicToken?: string
-      }
-      if (!runId || !publicToken) {
-        throw new Error("Design response is missing the run details")
-      }
-
-      setActiveRun({ runId, publicToken })
-      return true
-    } catch (designError) {
-      console.error(designError)
-      // Errors belong in the conversation, so everyone sees why nothing came.
-      void sendAssistantMessage(DESIGN_START_ERROR_MESSAGE).catch(
-        (publishError) => {
-          console.error(publishError)
-          setError(DESIGN_START_ERROR_MESSAGE)
-        }
-      )
-      return false
-    } finally {
-      setPending(false)
-    }
+    if (!trimmed || busy || !canSend) return
+    clearError()
+    const started = await send(trimmed)
+    if (started) setInput("")
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     // Enter submits; Shift+Enter inserts a newline.
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault()
-      void send(input)
+      void handleSend(input)
     }
   }
 
@@ -293,7 +145,7 @@ function AiArchitectChat({ projectId, aiActivity }: AiArchitectTabProps) {
                 <button
                   key={prompt}
                   type="button"
-                  onClick={() => send(prompt)}
+                  onClick={() => handleSend(prompt)}
                   disabled={busy || !canSend}
                   className="rounded-full bg-subtle px-3 py-1.5 text-xs text-brand transition-colors hover:bg-elevated focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                 >
@@ -357,7 +209,7 @@ function AiArchitectChat({ projectId, aiActivity }: AiArchitectTabProps) {
           <Button
             type="button"
             size="icon-sm"
-            onClick={() => send(input)}
+            onClick={() => handleSend(input)}
             disabled={busy || !canSend || input.trim().length === 0}
             aria-label="Send message"
             className="absolute right-2 bottom-2 bg-accent-green text-(--bg-base) hover:bg-accent-green/90"
@@ -369,32 +221,18 @@ function AiArchitectChat({ projectId, aiActivity }: AiArchitectTabProps) {
             )}
           </Button>
         </div>
-        {/* The interview is a second entry into the same submit, not a second
-         * generation path — it opens with whatever is already typed above. */}
-        <div className="mt-2 flex items-center justify-between gap-2">
-          <button
-            type="button"
-            onClick={() => setInterviewOpen(true)}
-            disabled={busy || !canSend}
-            className="flex items-center gap-1.5 rounded-full bg-subtle px-3 py-1.5 text-xs text-brand transition-colors hover:bg-elevated focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            Guided brief
-          </button>
+        <div className="mt-2 flex items-center justify-end gap-2">
           <p className="text-xs text-copy-faint">
-            <kbd className="font-sans">Enter</kbd> to send ·{" "}
-            <kbd className="font-sans">Shift + Enter</kbd> for a new line
+            Prefer a guided flow?{" "}
+            <Link
+              href={`/editor/${projectId}/discovery`}
+              className="text-brand hover:underline"
+            >
+              Discovery →
+            </Link>
           </p>
         </div>
       </div>
-
-      <ArchitectureInterview
-        open={interviewOpen}
-        onOpenChange={setInterviewOpen}
-        initialIdea={input}
-        onGenerate={send}
-        busy={busy}
-      />
     </div>
   )
 }

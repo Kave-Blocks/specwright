@@ -1,5 +1,7 @@
 import type { ReactNode } from "react"
-import { DraftingCompass, FileText, Share2, Sparkles } from "lucide-react"
+import { FileText, Share2, Sparkles } from "lucide-react"
+
+import { Logo } from "@/components/ui/logo"
 
 const FEATURES = [
   {
@@ -27,12 +29,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
   return (
     <div className="grid min-h-svh grid-cols-1 bg-base lg:grid-cols-2">
       <aside className="hidden flex-col justify-between border-r border-surface-border bg-surface px-12 py-10 lg:flex xl:px-16">
-        <div className="flex items-center gap-3">
-          <span className="flex size-9 items-center justify-center rounded-xl bg-brand text-primary-foreground">
-            <DraftingCompass className="size-5" />
-          </span>
-          <span className="text-lg font-semibold text-copy-primary">Specwright</span>
-        </div>
+        <Logo className="gap-3 text-lg" markClassName="size-8" />
 
         <div className="max-w-md space-y-10">
           <div className="space-y-5">

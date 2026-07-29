@@ -4,6 +4,7 @@ import { UserButton } from "@clerk/nextjs"
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Logo } from "@/components/ui/logo"
 
 interface EditorNavbarProps {
   isSidebarOpen: boolean
@@ -28,7 +29,7 @@ export function EditorNavbar({
           <SidebarToggleIcon className="h-5 w-5" />
         </Button>
       </div>
-      <div className="justify-self-center" />
+      <Logo className="justify-self-center text-sm" markClassName="size-5" />
       <div className="justify-self-end">
         <UserButton />
       </div>

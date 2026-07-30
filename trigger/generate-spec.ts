@@ -6,6 +6,11 @@ import {
   schemaTask,
 } from "@trigger.dev/sdk";
 
+import {
+  QUOTA_EXHAUSTED_MESSAGE,
+  isQuotaExhaustedError,
+} from "@/lib/ai-errors";
+import { prisma } from "@/lib/prisma";
 import { generateSpecMarkdown } from "@/lib/spec-agent/generate";
 import { generateSpecPayloadSchema } from "@/lib/spec-agent/payload";
 import { saveProjectSpec } from "@/lib/spec-agent/storage";
@@ -59,9 +64,10 @@ function isTerminalFailure(error: unknown, ctx: Context): boolean {
  * produced it become a Markdown technical specification:
  *
  * 1. Report a "start" phase on the run's metadata.
- * 2. Write the spec with OpenAI from the canvas graph + chat context.
- * 3. Persist it — Markdown to Vercel Blob, a `ProjectSpec` row to Prisma.
- * 4. Report "complete" (or "error") and return the Markdown as the task output.
+ * 2. Read the project's persisted Discovery brief, if it has one.
+ * 3. Write the spec with OpenAI from the canvas graph + brief + chat context.
+ * 4. Persist it — Markdown to Vercel Blob, a `ProjectSpec` row to Prisma.
+ * 5. Report "complete" (or "error") and return the Markdown as the task output.
  *
  * The payload is validated by {@link generateSpecPayloadSchema} — the same
  * schema `POST /api/ai/spec` validates the request with. `projectId` is resolved
@@ -95,12 +101,40 @@ export const generateSpec = schemaTask({
 
       setPhase("processing", "Specwright is writing your technical spec…");
 
-      const markdown = await generateSpecMarkdown({ chatHistory, nodes, edges });
+      // Read the Discovery brief server-side rather than accepting it in the
+      // payload: it must never be client-supplied, so it is fetched from the
+      // already access-checked `projectId` exactly as that id was itself
+      // resolved rather than trusted from the request body. Deliberately
+      // unguarded — like the `saveProjectSpec` call below, a database failure
+      // is a genuine error and belongs in the run's catch/retry handling, not
+      // swallowed into a best-effort "no brief".
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+        select: { architectureBrief: true },
+      });
+
+      if (!project) {
+        // The id reached this task already resolved from the caller's access,
+        // so a missing row is not a transient fault a retry could fix.
+        throw new AbortTaskRunError(`Project ${projectId} no longer exists`);
+      }
+
+      // `null` here is legitimate and distinct from the above: it means
+      // Discovery has simply never been run for this project.
+      const architectureBrief = project.architectureBrief;
+
+      const markdown = await generateSpecMarkdown({
+        chatHistory,
+        nodes,
+        edges,
+        architectureBrief,
+      });
 
       logger.info("generate-spec produced a spec", {
         projectId,
         roomId,
         characters: markdown.length,
+        hasBrief: architectureBrief !== null,
       });
 
       setPhase("processing", "Specwright is saving your technical spec…");
@@ -123,7 +157,11 @@ export const generateSpec = schemaTask({
       return markdown;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      const terminal = isTerminalFailure(error, ctx);
+      // A spent quota is terminal on whatever attempt surfaces it: no retry can
+      // succeed until someone tops up billing, so it never waits for the attempt
+      // budget to run out before the requester is told.
+      const quotaExhausted = isQuotaExhaustedError(error);
+      const terminal = quotaExhausted || isTerminalFailure(error, ctx);
 
       logger.error("generate-spec attempt failed", {
         projectId,
@@ -132,6 +170,7 @@ export const generateSpec = schemaTask({
         attempt: ctx.attempt.number,
         maxAttempts: ctx.run.maxAttempts,
         terminal,
+        quotaExhausted,
       });
 
       // Only tell the subscriber the spec failed once no attempt is left to
@@ -140,8 +179,17 @@ export const generateSpec = schemaTask({
       if (terminal) {
         setPhase(
           "error",
-          "Specwright hit an error and couldn't finish the spec. Please try again.",
+          quotaExhausted
+            ? QUOTA_EXHAUSTED_MESSAGE
+            : "Specwright hit an error and couldn't finish the spec. Please try again.",
         );
+      }
+
+      if (quotaExhausted) {
+        // Same non-retriable class as the missing-`OPENAI_API_KEY` check above:
+        // nothing changes until a human acts, so fail the run now rather than
+        // spending the remaining attempts on calls that cannot succeed.
+        throw new AbortTaskRunError(message);
       }
 
       // Rethrow so Trigger retries transient failures (`AbortTaskRunError` is

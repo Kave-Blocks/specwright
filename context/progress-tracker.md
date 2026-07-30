@@ -53,7 +53,8 @@ the file says which) · `none`.
 | 33 | [architecture-interview](progress/33-architecture-interview.md) | shipped | partial | Guided Discovery interview composes a structured brief and feeds the existing design path |
 | 34 | [project-hub](progress/34-project-hub.md) | shipped | browser | Project Home + independent discovery/canvas/specs routes, gated once in a shared layout |
 | 35 | [brief-persistence](progress/35-brief-persistence.md) | shipped | partial | Brief persisted to Postgres; DB round-trip verified, HTTP path not browser-driven |
-| 36 | `stack-aware-spec-generation` | specced | — | Not yet built |
+| 36 | [stack-aware-spec-generation](progress/36-stack-aware-spec-generation.md) | shipped | partial | Specs gain a `## Tech Stack` section fed by the persisted brief; section content not model-verified |
+| 37 | [quota-error-surfacing](progress/37-quota-error-surfacing.md) | shipped | partial | A spent OpenAI quota fails fast with an honest message; retry-count not observed |
 
 ### Other work
 
@@ -70,6 +71,21 @@ Work with no single owning unit — cross-cutting QA passes, branding, layout re
 | 2026-07-29 | [sidebar-overlay-layout-fix](progress/2026-07-29-sidebar-overlay-layout-fix.md) | shipped | structural | Floating sidebar no longer covers Home/Discovery/Specs content |
 
 ## Open Questions
+
+- **OpenAI quota is exhausted (hit 2026-07-29):** the account behind `OPENAI_API_KEY` returns `429 — "You exceeded your current quota"` (`insufficient_quota`). No AI generation (design or spec) can run until billing is topped up. This blocked the content-level verification of unit `36`; the four checks still outstanding are listed under "Not verified" in [`progress/36-stack-aware-spec-generation.md`](progress/36-stack-aware-spec-generation.md).
+
+- ~~**A spent OpenAI quota is reported to the user as a transient failure, and it is not one.**~~ — **fixed by unit [`37`](progress/37-quota-error-surfacing.md).** A quota failure is now terminal on the first attempt and carries an honest message; the classification was confirmed against the live exhausted account. Two things remain: the AI SDK's own 3 internal retries stay (deliberate — see `37`'s Scope Limits), and Trigger's actual attempt count was never observed, because `retries.enabledInDev: false` makes a dev run single-attempt regardless. The original trace is kept below, since it is what a deployed run should now be checked against.
+
+  What happened *before* `37`, on both AI paths:
+
+  1. The AI SDK's `generateText` retries the 429 internally **3×** before throwing `RetryError`.
+  2. The task's `catch` treats that as an ordinary error. `isTerminalFailure` is false on attempts 1–2 of 3, so **no `error` phase is published** and the error is rethrown — Trigger then retries the whole task (`trigger.config.ts` → `maxAttempts: 3`). Up to **9 doomed model calls** for one click. (`retries.enabledInDev: false`, so this compounds in production only.)
+  3. Only on the final attempt does the run publish the generic `phase: "error"` — `"Specwright hit an error and couldn't finish the spec. Please try again."` (`trigger/generate-spec.ts`; `trigger/design-agent.ts` has the same line).
+  4. The client settles to its own generic constant — `RUN_FAILED_ERROR` = `"Specwright couldn't finish the spec. Please try again."` (`components/editor/specs/specs-view.tsx`).
+
+  Why that was wrong: **"Please try again" is the one thing that cannot work.** The user waited through three rounds of retry backoff to be told to repeat an action guaranteed to fail until someone topped up billing, with nothing distinguishing it from a genuine blip.
+
+  How `37` resolved it: `lib/ai-errors.ts` classifies `insufficient_quota` (**not** a bare 429 — an ordinary rate limit is also 429 and must stay retriable), both tasks raise it as `AbortTaskRunError` with a distinct message, and the client stops overwriting the run's published text with its own generic constant. No new `AiStatusPhase` member was needed.
 
 - **Ops for AI generation to run live:** sync `OPENAI_API_KEY` and `LIVEBLOCKS_SECRET_KEY` into the Trigger.dev environment (dashboard env vars / `syncEnvVars`), then run the Trigger.dev dev worker (`npx trigger dev`) so the `design-agent` task can execute; task env is not auto-loaded from Next's `.env.local`.
 

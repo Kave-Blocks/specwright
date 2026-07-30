@@ -1,6 +1,10 @@
 import { AbortTaskRunError, logger, task } from "@trigger.dev/sdk";
 import { mutateFlow } from "@liveblocks/react-flow/node";
 
+import {
+  QUOTA_EXHAUSTED_MESSAGE,
+  isQuotaExhaustedError,
+} from "@/lib/ai-errors";
 import { applyDesignPlan, type AppliedSummary } from "@/lib/design-agent/apply";
 import { generateDesignPlan } from "@/lib/design-agent/plan";
 import { ensureAiStatusFeed, getLiveblocks } from "@/lib/liveblocks";
@@ -218,7 +222,12 @@ export const designAgent = task({
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      logger.error("design-agent failed", { roomId, error: message });
+      const quotaExhausted = isQuotaExhaustedError(error);
+      logger.error("design-agent failed", {
+        roomId,
+        error: message,
+        quotaExhausted,
+      });
 
       // Surface the failure in the shared status feed (best-effort — `announce`
       // never throws, so it can't mask the original error), then rethrow so
@@ -227,8 +236,16 @@ export const designAgent = task({
         liveblocks,
         roomId,
         "error",
-        "Specwright hit an error and couldn't finish. Please try again.",
+        quotaExhausted
+          ? QUOTA_EXHAUSTED_MESSAGE
+          : "Specwright hit an error and couldn't finish. Please try again.",
       );
+
+      if (quotaExhausted) {
+        // Same non-retriable class as the missing-`OPENAI_API_KEY` check above:
+        // no retry succeeds until someone tops up billing, so fail the run now.
+        throw new AbortTaskRunError(message);
+      }
 
       throw error;
     } finally {

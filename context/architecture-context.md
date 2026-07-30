@@ -63,7 +63,8 @@
 
 ### Spec Generation
 
-- Input: current canvas graph plus the room's chat history.
+- Input: current canvas graph, the room's chat history, and the project's persisted Discovery brief (`Project.architectureBrief`).
+- The brief is **read server-side by the task** from the already access-checked `projectId`, never accepted in the request body — the same rule `projectId` itself follows. It reaches the model as its own labeled prompt block, kept separate from the chat history, and grounds the spec's `## Tech Stack` section.
 - Execution: durable background task via Trigger.dev.
 - Progress is tracked on the run's own metadata, not on a room feed: a spec is written for the person who requested it, whereas design generation mutates the shared canvas and so broadcasts to everyone.
 - Output: a Markdown technical spec returned as the task output.

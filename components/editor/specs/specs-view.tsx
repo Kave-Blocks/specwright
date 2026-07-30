@@ -403,8 +403,11 @@ function GenerateSpecAction({
   const busy = pending || activeRun !== null
 
   const settle = useCallback(
-    (failed: boolean) => {
-      if (failed) setError(RUN_FAILED_ERROR)
+    (failed: boolean, failureText: string | null) => {
+      // Prefer the message the run itself published — that is how a task
+      // explains a failure the generic line would misdescribe (a spent AI quota
+      // says so, instead of "please try again", which cannot work).
+      if (failed) setError(failureText ?? RUN_FAILED_ERROR)
       // The task persists the spec before it completes, so by now the new row
       // exists — reload the list to pick it up.
       else onGenerated()
@@ -429,13 +432,18 @@ function GenerateSpecAction({
     const runId = activeRun.runId
     const failed = Boolean(runError) || run?.status !== "COMPLETED"
 
+    // A dropped subscription publishes nothing trustworthy — whatever metadata
+    // is cached predates the drop — so only the run's own reported failure
+    // supplies its message.
+    const failureText = runError ? null : runFailureText(run?.metadata)
+
     // Deferred so the settle never sets state synchronously inside the effect.
     // The guard is claimed inside the timer, not before it: a later realtime
     // update would otherwise cancel this timer while the guard already read as
     // settled, and the run would hang.
     const timer = setTimeout(() => {
       settledRunRef.current = runId
-      settle(failed)
+      settle(failed, failureText)
     }, 0)
     return () => clearTimeout(timer)
   }, [activeRun, run, runError, settle])
@@ -555,4 +563,22 @@ function runStatusText(metadata: unknown): string {
   if (typeof metadata !== "object" || metadata === null) return WORKING_FALLBACK
   const text = (metadata as { text?: unknown }).text
   return typeof text === "string" && text.length > 0 ? text : WORKING_FALLBACK
+}
+
+/**
+ * The failure message the run published, or `null` when it published none worth
+ * showing — in which case the caller falls back to {@link RUN_FAILED_ERROR}.
+ *
+ * Only the `error` phase's text is taken: a run can fail after last publishing
+ * a "processing…" line, and showing that as the error would read as though the
+ * spec were still being written. Metadata crosses the network, so its shape is
+ * checked rather than trusted, exactly as in {@link runStatusText}.
+ */
+function runFailureText(metadata: unknown): string | null {
+  if (typeof metadata !== "object" || metadata === null) return null
+  const record = metadata as { phase?: unknown; text?: unknown }
+  if (record.phase !== "error") return null
+  return typeof record.text === "string" && record.text.length > 0
+    ? record.text
+    : null
 }

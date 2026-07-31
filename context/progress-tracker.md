@@ -55,6 +55,10 @@ the file says which) · `none`.
 | 35 | [brief-persistence](progress/35-brief-persistence.md) | shipped | partial | Brief persisted to Postgres; DB round-trip verified, HTTP path not browser-driven |
 | 36 | [stack-aware-spec-generation](progress/36-stack-aware-spec-generation.md) | shipped | partial | Specs gain a `## Tech Stack` section fed by the persisted brief; section content not model-verified |
 | 37 | [quota-error-surfacing](progress/37-quota-error-surfacing.md) | shipped | partial | A spent OpenAI quota fails fast with an honest message; retry-count not observed |
+| 38 | [build-units](feature-specs/38-build-units.md) | specced | none | Project-scoped build units with human-owned status/verification; no model call, so unblocked by the quota |
+| 39 | [spec-versions-and-lineage](feature-specs/39-spec-versions-and-lineage.md) | specced | none | Specs get per-project version numbers and a unit records which spec produced it; no model call |
+| 40 | [change-proposals](feature-specs/40-change-proposals.md) | specced | none | A plain-English change returns a structured proposal — architecture delta, stale units, new work. Applies nothing |
+| 41 | [change-application](feature-specs/41-change-application.md) | specced | none | Applying a change creates the new units and marks stale ones superseded **without** rewriting them; no model call |
 
 ### Other work
 
@@ -69,8 +73,13 @@ Work with no single owning unit — cross-cutting QA passes, branding, layout re
 | 2026-07-19 | [panels-float-full-bleed](progress/2026-07-19-panels-float-full-bleed.md) | shipped | structural | Side panels layer over a full-bleed canvas; reverses the `08` docked-layout follow-up |
 | 2026-07-19 | [rename-to-specwright](progress/2026-07-19-rename-to-specwright.md) | shipped | structural | Ghost AI → Specwright across 16 files; npm name collision with a same-category competitor |
 | 2026-07-29 | [sidebar-overlay-layout-fix](progress/2026-07-29-sidebar-overlay-layout-fix.md) | shipped | structural | Floating sidebar no longer covers Home/Discovery/Specs content |
+| 2026-07-30 | [agent-harness](progress/2026-07-30-agent-harness.md) | shipped | structural | `tsc`/`lint` hook gates plus global and project agent definitions; no test framework still |
 
 ## Open Questions
+
+- **Build units have no automatic producer for a project's *first* set.** `38` defers deriving units from a generated spec, and `39` does not add it. After `41` ships, the change path produces units automatically while the initial path does not — Specwright will generate five units when asked for offline mode, but the original twenty are typed by hand. The asymmetry is the clearest candidate for the next unit; `38`'s producer contract (match on `key`, no-op on conflict, never write a human-owned column) is already the contract it would be written against.
+
+- **Applying a change never redraws the canvas, and the canvas is what specs are generated from.** `41` updates the build list only. `lib/spec-agent/generate.ts` states that the canvas is the source of truth for what the system contains, so a change that never reaches the canvas never reaches a later spec — a regenerated spec would silently drop everything the changes added. This is why `41` deliberately writes no spec. Pushing an applied change onto the canvas, through the existing design path, needs to be its own unit before a project accumulates several changes.
 
 - **OpenAI quota is exhausted (hit 2026-07-29):** the account behind `OPENAI_API_KEY` returns `429 — "You exceeded your current quota"` (`insufficient_quota`). No AI generation (design or spec) can run until billing is topped up. This blocked the content-level verification of unit `36`; the four checks still outstanding are listed under "Not verified" in [`progress/36-stack-aware-spec-generation.md`](progress/36-stack-aware-spec-generation.md).
 

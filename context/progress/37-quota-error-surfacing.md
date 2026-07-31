@@ -117,6 +117,14 @@ not a fabricated one.
 
 `QUOTA_EXHAUSTED_MESSAGE` was also asserted not to match `/try again/i`.
 
+**Re-verified 2026-07-30** on the committed code, from a fresh throwaway script (also since removed) —
+**19 assertions, all passing**, extending the original set with the cases the first pass left implicit:
+a `RetryError` wrapping only rate limits (stays retriable), a `RetryError` mixing one quota error in
+among rate limits (terminal), a `RetryError` wrapping plain `Error`s (`false`), an `APICallError` whose
+`data` is a non-object so the `responseBody` fallback has to carry the decision, an `UPPERCASE`
+discriminator, and a bare `"insufficient_quota"` string (`false` — the substring must not be enough on
+its own). `npm run build` and `npm run lint` both clean at that commit.
+
 ### Not verified
 
 **That Trigger actually makes only one attempt.** `AbortTaskRunError` is documented and

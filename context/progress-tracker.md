@@ -5,9 +5,12 @@ else lives in the `## Unit Index` below, one row per unit, linking to its own fi
 [`context/progress/`](progress/). Never append a per-unit paragraph to this file — write
 `context/progress/NN-name.md` instead and edit that unit's index row in place.
 
+Checks that need a person rather than an agent — a second account, a real payment — wait in
+[`context/qa/`](qa/), one file each. A unit's `Verified` level stays honest while they wait.
+
 ## Current Phase
 
-- Nothing in flight. Pick the lowest-numbered unit in the index below that is not `shipped`.
+Nothing in flight. Pick the lowest-numbered unit in the index below that is not `shipped`.
 
 ## Unit Index
 
@@ -55,10 +58,10 @@ the file says which) · `none`.
 | 35 | [brief-persistence](progress/35-brief-persistence.md) | shipped | partial | Brief persisted to Postgres; DB round-trip verified, HTTP path not browser-driven |
 | 36 | [stack-aware-spec-generation](progress/36-stack-aware-spec-generation.md) | shipped | partial | Specs gain a `## Tech Stack` section fed by the persisted brief; section content not model-verified |
 | 37 | [quota-error-surfacing](progress/37-quota-error-surfacing.md) | shipped | partial | A spent OpenAI quota fails fast with an honest message; retry-count not observed |
-| 38 | [build-units](feature-specs/38-build-units.md) | specced | none | Project-scoped build units with human-owned status/verification; no model call, so unblocked by the quota |
-| 39 | [spec-versions-and-lineage](feature-specs/39-spec-versions-and-lineage.md) | specced | none | Specs get per-project version numbers and a unit records which spec produced it; no model call |
-| 40 | [change-proposals](feature-specs/40-change-proposals.md) | specced | none | A plain-English change returns a structured proposal — architecture delta, stale units, new work. Applies nothing |
-| 41 | [change-application](feature-specs/41-change-application.md) | specced | none | Applying a change creates the new units and marks stale ones superseded **without** rewriting them; no model call |
+| 38 | [build-units](progress/38-build-units.md) | shipped | partial | Build units schema, API, UI surface; cascade delete, Planned card, and HTTP concurrency + cross-project scoping all verified. Only the collaborator path (needs a second Clerk account) is unproven. |
+| 39 | [spec-versions-and-lineage](progress/39-spec-versions-and-lineage.md) | shipped | browser | Specs numbered per project; build units track source version; backfill verified at depth |
+| 40 | [change-proposals](progress/40-change-proposals.md) | shipped | browser | Proposals generate and render end-to-end, applying nothing; no-spec refusal at boundary. |
+| 41 | [change-application](progress/41-change-application.md) | shipped | partial | Applying a change creates the new units and marks stale ones superseded **without** rewriting them; 59 library + 36 HTTP checks pass. No browser pass was run, so the UI is unobserved. |
 
 ### Other work
 
@@ -74,6 +77,7 @@ Work with no single owning unit — cross-cutting QA passes, branding, layout re
 | 2026-07-19 | [rename-to-specwright](progress/2026-07-19-rename-to-specwright.md) | shipped | structural | Ghost AI → Specwright across 16 files; npm name collision with a same-category competitor |
 | 2026-07-29 | [sidebar-overlay-layout-fix](progress/2026-07-29-sidebar-overlay-layout-fix.md) | shipped | structural | Floating sidebar no longer covers Home/Discovery/Specs content |
 | 2026-07-30 | [agent-harness](progress/2026-07-30-agent-harness.md) | shipped | structural | `tsc`/`lint` hook gates plus global and project agent definitions; no test framework still |
+| 2026-07-31 | [text-faint-palette](progress/2026-07-31-text-faint-palette.md) | shipped | partial | `--text-faint` becomes decoration-only; 8 text usages migrated to muted, 5 deferred. |
 
 ## Open Questions
 

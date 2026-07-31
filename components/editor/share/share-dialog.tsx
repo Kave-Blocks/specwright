@@ -206,7 +206,7 @@ export function ShareDialog({
                   placeholder="teammate@example.com"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
-                  className="h-9 w-full rounded-xl bg-transparent pr-3 pl-9 text-sm text-copy-primary outline-none placeholder:text-copy-faint"
+                  className="h-9 w-full rounded-xl bg-transparent pr-3 pl-9 text-sm text-copy-primary outline-none placeholder:text-copy-muted"
                 />
               </div>
               <Button type="submit" disabled={!email.trim() || isInviting}>

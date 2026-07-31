@@ -222,7 +222,7 @@ function AiArchitectChat({ projectId, aiActivity }: AiArchitectTabProps) {
           </Button>
         </div>
         <div className="mt-2 flex items-center justify-end gap-2">
-          <p className="text-xs text-copy-faint">
+          <p className="text-xs text-copy-muted">
             Prefer a guided flow?{" "}
             <Link
               href={`/editor/${projectId}/discovery`}

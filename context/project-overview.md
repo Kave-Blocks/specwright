@@ -17,11 +17,13 @@ Specwright is a real-time collaborative system design workspace. Users describe 
 
 1. User signs in.
 2. User creates or selects a project.
-3. User enters the project workspace, landing on **Project Home** — a mode-selection view, not the canvas. Home shows three real mode cards (Architecture Interview, Canvas, Specs), each reflecting an actual signal (canvas saved / spec count) where one exists, plus a non-interactive "Planned" card for a future mode. No mode is locked behind another.
-4. From Home, the mode-switcher, or any mode card, the user reaches one of three equally-weighted, independently-addressable routes:
+3. User enters the project workspace, landing on **Project Home** — a mode-selection view, not the canvas. Home shows five real mode cards (Architecture Interview, Canvas, Specs, Build, Changes), each reflecting an actual signal (canvas saved / spec count / units shipped / changes awaiting review) where one exists, plus a non-interactive "Planned" card for a future mode. No mode is locked behind another.
+4. From Home, the mode-switcher, or any mode card, the user reaches one of five equally-weighted, independently-addressable routes:
    - **Architecture Interview** (`/discovery`) — a guided, fully skippable interview that composes a structured project brief and submits it in place of a one-line prompt.
    - **Canvas** (`/canvas`) — the collaborative real-time system-design surface, plus a freeform AI chat panel.
    - **Specs** (`/specs`) — a two-pane list + inline Markdown preview of generated specs.
+   - **Build** (`/build`) — the project's ordered list of build units, each with a status and a verification level the team sets by hand.
+   - **Changes** (`/changes`) — plain-English change requests against the project's current spec, each returning a structured proposal to review.
 5. User optionally imports a starter system design template into the canvas.
 6. User prompts the AI to generate or extend the system design — from Canvas's freeform chat, or from the Architecture Interview's composed brief. Both submit through the same design path and land the result on Canvas.
 7. AI generates nodes and edges in the shared canvas.
@@ -29,6 +31,8 @@ Specwright is a real-time collaborative system design workspace. Users describe 
 9. User triggers spec generation from the Specs route.
 10. App persists the generated Markdown spec.
 11. User reviews or downloads the spec inline, without leaving the Specs route.
+12. On the Build route, the team records the units of work the project intends to ship and keeps each one's status and verification level current as the work happens.
+13. On the Changes route, a member describes a change in plain English against the current spec and gets back a proposal — the architecture delta, which existing units the change makes stale, and what new work it implies — to review and either keep or discard. A proposal applies nothing on its own.
 
 ## Features
 
@@ -62,6 +66,19 @@ Specwright is a real-time collaborative system design workspace. Users describe 
 - The current canvas graph is converted into a Markdown technical specification.
 - Specs are persisted as files and linked to the project in the database.
 - Users can view and download generated specs.
+
+### Change Proposals
+
+- A member describes a change in plain English against a project that already has a spec.
+- Specwright returns a structured proposal: the architecture delta (what is added, modified, removed), which existing build units the change affects and why, what new work it implies, and any open questions.
+- A proposal **applies nothing** — it is a document to review. It can be kept or discarded, and a discarded proposal is retained rather than deleted, because a rejected idea is a decision worth keeping.
+- A change is refused before any AI work when the project has no spec, since a change is a delta against something.
+
+### Build Units
+
+- A project keeps an ordered list of build units — the pieces of work a team intends to implement.
+- Each unit carries a title, an optional summary, a status, and a verification level, all set by a person.
+- Any project member can add a unit, rename it, change its status or verification, and delete it; a unit keeps its number for the life of the project.
 
 ## Scope
 

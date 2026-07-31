@@ -1,0 +1,94 @@
+/// Where a change sits in its lifecycle.
+///
+/// SCREAMING_SNAKE like `ProjectStatus` and `BuildUnitStatus`, and translated to
+/// a lowercase wire vocabulary in exactly one place (`lib/changes.ts`), the same
+/// split `lib/build-units.ts` documents.
+///
+/// All three members are defined here even though this unit only ever writes
+/// `PROPOSED` and `DISCARDED`. An enum member is **vocabulary, not an
+/// anticipated relationship** — the value is meaningful the moment it is
+/// written — and splitting one across units would buy a second migration for
+/// nothing. Unit `41` implements the `APPLIED` transition.
+enum ChangeStatus {
+  PROPOSED
+  APPLIED
+  DISCARDED
+}
+
+/// One plain-English change request against a project, and the proposal the
+/// model returned for it.
+///
+/// Same artifact/metadata split as `ProjectSpec`: the proposal document itself
+/// is JSON in Vercel Blob at `changes/{projectId}/{changeId}.json`, and
+/// `proposalPath` holds the private blob URL used to read it back. The store is
+/// private, so that URL is never handed to a client — it is only dereferenced
+/// behind an access check.
+///
+/// `sequence` comes from `Project.nextChangeSequence`, taken in the same
+/// transaction as the insert. It is never reused, so gaps are correct here for
+/// the same reason they are correct on `ProjectBuildUnit.sequence`.
+model ProjectChange {
+  id        String       @id @default(cuid())
+  projectId String
+  sequence  Int
+  /// The member's own words, stored verbatim. Bounded by truncation on the way
+  /// in (`lib/change-agent/payload.ts`), never by rejection — it is typed into a
+  /// control with no `maxlength`.
+  request   String
+  status    ChangeStatus @default(PROPOSED)
+  /// **Which spec version the proposal was reasoned against.** This is the whole
+  /// basis of `41`'s staleness check: a proposal is a delta, and a delta whose
+  /// base silently vanished cannot be judged. Hence `Restrict` below — removing
+  /// a spec that a change was reasoned against is refused outright rather than
+  /// quietly nulling the one column that makes the change interpretable. That is
+  /// the deliberate opposite of `ProjectBuildUnit.specId`'s `SetNull`, and the
+  /// reason differs: a build unit survives losing its lineage, a proposal does
+  /// not survive losing its base.
+  baseSpecId String
+  /// Private blob URL of the stored proposal JSON. Optional because the row is
+  /// only written once the upload has succeeded — see `lib/change-agent/storage.ts`.
+  proposalPath String?
+  /// Clerk user id of the member who asked for the change.
+  authorId  String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  project  Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  baseSpec ProjectSpec          @relation(fields: [baseSpecId], references: [id], onDelete: Restrict)
+  impacts  ProjectChangeImpact[]
+  /// Units this change created when it was applied, and units it made stale.
+  /// Both are `SetNull` on the owning side — a build unit outlives the change
+  /// that produced or replaced it. See `ProjectBuildUnit` for the full reason.
+  createdUnits    ProjectBuildUnit[] @relation("ChangeCreatedUnits")
+  supersededUnits ProjectBuildUnit[] @relation("ChangeSupersededUnits")
+
+  @@unique([projectId, sequence])
+  // Changes are always listed newest-first within a project.
+  @@index([projectId, createdAt])
+}
+
+/// One existing build unit that a change affects, and why.
+///
+/// The unit is referenced by **`buildUnitId`, never by `key`**. `38` re-derives
+/// a unit's key from its title whenever the title changes, so a key is not
+/// stable across a rename — an impact row keyed by it would silently come to
+/// point at nothing, or worse, at a different unit that later took the slug.
+/// The model *does* speak in keys, but those are resolved to ids at the system
+/// boundary (`lib/change-agent/validate.ts`) and only ids are ever stored.
+model ProjectChangeImpact {
+  id          String @id @default(cuid())
+  changeId    String
+  buildUnitId String
+  /// The model's stated reason this unit is affected, kept so a reviewer can
+  /// judge the claim rather than take it on trust.
+  reason      String
+
+  change    ProjectChange    @relation(fields: [changeId], references: [id], onDelete: Cascade)
+  buildUnit ProjectBuildUnit @relation(fields: [buildUnitId], references: [id], onDelete: Cascade)
+
+  // Cascading from *both* parents is what stops a dangling reference: deleting
+  // the change drops its impacts, and deleting a unit drops the impacts that
+  // pointed at it, leaving the change itself readable with that entry simply
+  // gone.
+  @@unique([changeId, buildUnitId])
+}

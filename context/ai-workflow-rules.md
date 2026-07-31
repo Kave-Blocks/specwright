@@ -72,6 +72,10 @@ Every unit of work gets its own file under `context/progress/`, never a new para
 
 `context/progress/_TEMPLATE.md` documents the naming rule, the Follow-up convention, and the `Status`/`Verified` vocabularies used by the index.
 
+### Deferring A Check To A Person
+
+A check that genuinely needs a human step — a second account, a real payment, a physical device — goes in `context/qa/<slug>.md` rather than being written off in a progress file's "not verified" list. See `context/qa/README.md` for the file shape. Two rules: the unit's `Verified` level does **not** improve because a check was filed, and the file is deleted once the check runs and its result lands in the owning unit's progress file.
+
 ## Before Moving To The Next Unit
 
 1. The current unit works end to end within its defined scope.

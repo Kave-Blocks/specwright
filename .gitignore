@@ -44,4 +44,7 @@ next-env.d.ts
 # trigger.dev
 .trigger
 
+# playwright mcp — console/page snapshots written into the repo root by browser QA runs
+.playwright-mcp
+
 /app/generated/prisma

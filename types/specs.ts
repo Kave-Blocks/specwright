@@ -12,11 +12,16 @@
  * `ProjectSpec.filePath` (the private Blob URL) is deliberately absent: a blob
  * URL is never handed to a client, and the Markdown is only ever read back
  * through the access-checked download route. The `filename` is derived
- * server-side from the spec id, since the model stores no filename column.
+ * server-side from the version, since the model stores no filename column.
  */
 export interface ProjectSpecSummary {
   id: string
-  /** Name the spec downloads as, e.g. `spec-{id}.md`. */
+  /**
+   * Per-project version, assigned once and never reused. This is what the UI
+   * labels a spec by — "Version 3" — so no spec id is ever user-visible.
+   */
+  version: number
+  /** Name the spec downloads as, e.g. `spec-v3.md`. */
   filename: string
   /** ISO-8601 — `Date` does not survive JSON. */
   createdAt: string

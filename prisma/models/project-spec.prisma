@@ -3,14 +3,32 @@
 /// `filePath` holds the blob URL used to read it back (the same split the canvas
 /// uses via `Project.canvasJsonPath`). The store is private, so the URL is never
 /// handed out directly; it is only dereferenced behind an access check.
+///
+/// A spec's `version` is how a project refers to it — "Version 3", never an
+/// opaque id. It is assigned once, from `Project.nextSpecVersion`, and is never
+/// reused or renumbered: a version names the thing people talked about, so it
+/// has to keep naming it. The counter, not the unique below, is the mechanism
+/// that hands out distinct numbers; `@@unique([projectId, version])` is the last
+/// line of defence behind it, so a bug that bypasses the counter fails loudly
+/// instead of quietly duplicating a version.
+///
+/// There is deliberately no `supersedesId`. While every spec is a full
+/// regeneration from the canvas, version N supersedes N−1 by definition and the
+/// column would store nothing that is not already true of the numbers.
 model ProjectSpec {
   id        String   @id @default(cuid())
   projectId String
+  version   Int
   filePath  String
   createdAt DateTime @default(now())
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project    Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  buildUnits ProjectBuildUnit[]
+  // Changes reasoned against this spec. `ProjectChange.baseSpecId` is
+  // `onDelete: Restrict`, so a spec with changes against it cannot be removed.
+  changes    ProjectChange[]
 
+  @@unique([projectId, version])
   // Specs are always listed newest-first within a project.
   @@index([projectId, createdAt])
 }

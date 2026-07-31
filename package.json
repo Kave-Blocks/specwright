@@ -8,6 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "simulate:cursor": "tsx scripts/simulate-cursor.ts",
+    "verify:build-units": "tsx scripts/verify-build-units-http.ts",
+    "verify:spec-versions": "tsx scripts/verify-spec-versions.ts",
+    "verify:changes": "tsx scripts/verify-change-proposals.ts",
+    "verify:apply": "tsx scripts/verify-change-application.ts",
+    "verify:apply-http": "tsx scripts/verify-change-application-http.ts",
     "trigger:dev": "trigger dev",
     "trigger:deploy": "trigger deploy"
   },

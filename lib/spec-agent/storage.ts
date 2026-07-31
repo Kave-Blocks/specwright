@@ -27,14 +27,20 @@ export function specBlobPath(projectId: string, specId: string): string {
   return `specs/${projectId}/${specId}.md`;
 }
 
-/** Filename a downloaded spec is saved as. The id is server-generated, so it is safe in the header. */
-export function specDownloadFilename(specId: string): string {
-  return `spec-${specId}.md`;
+/**
+ * Filename a downloaded spec is saved as — `spec-v3.md`, the version people
+ * refer to the spec by rather than the id they never see. The version is
+ * server-assigned and numeric, so it is as safe in a `Content-Disposition`
+ * header as the id was.
+ */
+export function specDownloadFilename(version: number): string {
+  return `spec-v${version}.md`;
 }
 
 /** The stored spec, as the caller needs to refer to it afterwards. */
 export interface SavedProjectSpec {
   id: string;
+  version: number;
   filePath: string;
 }
 
@@ -47,7 +53,15 @@ export interface SavedProjectSpec {
  * The upload happens first so the row is only ever written once the artifact it
  * points at actually exists; a failed upload therefore leaves no dangling
  * `ProjectSpec` (the reverse order could). A failure between the two leaves an
- * unreferenced blob, which is inert.
+ * unreferenced blob, which is inert. It also stays **outside** the transaction
+ * below, so a failed upload burns no version.
+ *
+ * The version comes from `Project.nextSpecVersion`, taken and used in one
+ * transaction for the same reason and in the same shape as
+ * `createBuildUnit`'s sequence (`lib/build-units.ts`): the `UPDATE … RETURNING`
+ * holds a row lock on the `Project` row until commit, and that lock is what
+ * serializes two concurrent generations into two different versions rather than
+ * one collision. The number this spec takes is the returned value minus one.
  *
  * `projectId` must already be access-checked by the caller — this function does
  * not authorize.
@@ -70,8 +84,21 @@ export async function saveProjectSpec({
     addRandomSuffix: false,
   });
 
-  return prisma.projectSpec.create({
-    data: { id: specId, projectId, filePath: blob.url },
-    select: { id: true, filePath: true },
+  return prisma.$transaction(async (tx) => {
+    const { nextSpecVersion } = await tx.project.update({
+      where: { id: projectId },
+      data: { nextSpecVersion: { increment: 1 } },
+      select: { nextSpecVersion: true },
+    });
+
+    return tx.projectSpec.create({
+      data: {
+        id: specId,
+        projectId,
+        version: nextSpecVersion - 1,
+        filePath: blob.url,
+      },
+      select: { id: true, version: true, filePath: true },
+    });
   });
 }

@@ -158,6 +158,9 @@ export function SpecsView({ projectId }: { projectId: string }) {
  * download control is a sibling rather than a nested button — nesting one
  * interactive element inside another is invalid and breaks keyboard
  * navigation.
+ *
+ * A spec is named by its version, never by its id: `spec.id` is used only to
+ * address the download route and to key the list.
  */
 function SpecCard({
   spec,
@@ -183,7 +186,7 @@ function SpecCard({
         type="button"
         onClick={onSelect}
         aria-current={isSelected}
-        aria-label={`Preview ${spec.filename}`}
+        aria-label={`Preview version ${spec.version}`}
         className="flex min-w-0 flex-1 items-center gap-3 rounded-xl p-3 text-left focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
       >
         <span
@@ -201,7 +204,7 @@ function SpecCard({
               isSelected ? "text-brand" : "text-copy-primary"
             )}
           >
-            {spec.filename}
+            Version {spec.version}
           </span>
           <span className="mt-0.5 block truncate text-xs text-copy-muted">
             {formatSpecDate(spec.createdAt)}
@@ -214,7 +217,7 @@ function SpecCard({
         variant="ghost"
         size="icon-sm"
         onClick={() => downloadSpec(projectId, spec.id, spec.filename)}
-        aria-label={`Download ${spec.filename}`}
+        aria-label={`Download version ${spec.version}`}
         className="mr-3 shrink-0 text-copy-muted hover:text-copy-primary"
       >
         <Download className="h-4 w-4" />
@@ -238,7 +241,7 @@ function SpecPreviewPane({
       <div className="flex items-center justify-between gap-3 border-b border-surface-border px-5 py-4">
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-copy-primary">
-            {spec.filename}
+            Version {spec.version}
           </p>
           <p className="text-xs text-copy-muted">
             Generated {formatSpecDate(spec.createdAt)}

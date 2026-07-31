@@ -39,8 +39,8 @@ function CanvasLoading() {
 function CanvasError() {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-1 px-6 text-center">
-      <p className="text-sm text-copy-muted">Couldn’t connect to the canvas</p>
-      <p className="text-xs text-copy-faint">
+      <p className="text-sm text-copy-secondary">Couldn’t connect to the canvas</p>
+      <p className="text-xs text-copy-muted">
         Check your connection and reload the page to try again.
       </p>
     </div>

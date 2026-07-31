@@ -69,7 +69,7 @@ const COMPONENTS: Components = {
   ol: (props) => (
     <ol
       {...withoutNode(props)}
-      className="my-2 list-decimal space-y-1 pl-5 text-sm text-copy-secondary marker:text-copy-faint"
+      className="my-2 list-decimal space-y-1 pl-5 text-sm text-copy-secondary marker:text-copy-muted"
     />
   ),
   li: (props) => <li {...withoutNode(props)} className="leading-relaxed" />,

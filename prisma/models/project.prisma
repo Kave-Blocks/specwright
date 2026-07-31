@@ -4,20 +4,39 @@ enum ProjectStatus {
 }
 
 model Project {
-  id                String        @id @default(cuid())
-  ownerId           String
-  name              String
-  description       String?
-  status            ProjectStatus @default(DRAFT)
-  canvasJsonPath    String?
+  id                    String        @id @default(cuid())
+  ownerId               String
+  name                  String
+  description           String?
+  status                ProjectStatus @default(DRAFT)
+  canvasJsonPath        String?
   // Latest Discovery-composed brief, overwritten on each Generate. A single
   // current value (like canvasJsonPath), not a history like ProjectSpec.
-  architectureBrief String?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  architectureBrief     String?
+  // Number to hand the project's next build unit. A stored counter rather than
+  // `max(sequence) + 1`: the max reuses a number once the highest unit is
+  // deleted, and two members creating a unit at the same moment would read the
+  // same max and collide on it.
+  nextBuildUnitSequence Int           @default(1)
+  // Number to hand the project's next generated spec. Same reasoning as
+  // `nextBuildUnitSequence` above, one field up: `max(version) + 1` is read by
+  // both of two collaborators pressing Generate Spec at the same moment, and
+  // they collide on it. One pattern, used twice — not two.
+  nextSpecVersion       Int           @default(1)
+  // Number to hand the project's next change. The **third** counter on this
+  // model, and deliberately the same pattern a third time rather than a third
+  // pattern: `max(n) + 1` is wrong for all three for the identical reason
+  // `nextBuildUnitSequence` writes out above — it reuses a number after a
+  // delete, and two members acting at the same moment read the same max and
+  // collide on it. One shape, learned once.
+  nextChangeSequence    Int           @default(1)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 
   collaborators ProjectCollaborator[]
   specs         ProjectSpec[]
+  buildUnits    ProjectBuildUnit[]
+  changes       ProjectChange[]
 
   @@index([ownerId])
   @@index([createdAt])

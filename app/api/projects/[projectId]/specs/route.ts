@@ -15,8 +15,12 @@ import type { ProjectSpecSummary } from "@/types/specs";
  *
  * Metadata only. `filePath` — the private Blob URL — is **never** selected into
  * the response: a spec's bytes are only ever read through the download route,
- * behind its own access check. The filename is derived from the spec id here,
+ * behind its own access check. The filename is derived from the version here,
  * because `ProjectSpec` stores no filename of its own (see `types/specs.ts`).
+ *
+ * Ordering stays newest-first by `createdAt`. Versions ascend with creation, so
+ * ordering by `version` would produce the same list by a less obvious route —
+ * and `@@index([projectId, createdAt])` already serves this one.
  */
 export const GET = withProjectMember<{ projectId: string }>(
   async (_request, { project }) => {
@@ -24,12 +28,13 @@ export const GET = withProjectMember<{ projectId: string }>(
       // The project the guard resolved, never the raw path param.
       where: { projectId: project.id },
       orderBy: { createdAt: "desc" },
-      select: { id: true, createdAt: true },
+      select: { id: true, version: true, createdAt: true },
     });
 
     const specs: ProjectSpecSummary[] = rows.map((row) => ({
       id: row.id,
-      filename: specDownloadFilename(row.id),
+      version: row.version,
+      filename: specDownloadFilename(row.version),
       createdAt: row.createdAt.toISOString(),
     }));
 

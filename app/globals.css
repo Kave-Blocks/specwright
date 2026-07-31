@@ -87,6 +87,11 @@
     --text-primary: #f0f0f4;
     --text-secondary: #c0c0cc;
     --text-muted: #808090;
+    /* Decoration only — icons, chevrons, `ul` markers. Never text, at any size,
+     * on any surface: it peaks at 2.53:1 (on `bg-base`) and bottoms out at
+     * 2.10:1 (on `bg-subtle`), and a value bright enough to clear 4.5:1 would be
+     * lighter than `--text-muted`. Do not lighten it; use `--text-muted`
+     * instead. See "`--text-faint` is decoration-only" in `context/ui-context.md`. */
     --text-faint: #505060;
     --accent-primary: #00c8d4;
     --accent-primary-dim: rgba(0, 200, 212, 0.12);

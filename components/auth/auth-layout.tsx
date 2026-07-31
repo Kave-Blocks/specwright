@@ -59,7 +59,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           </ul>
         </div>
 
-        <p className="text-xs text-copy-faint">
+        <p className="text-xs text-copy-muted">
           © 2026 Specwright. All rights reserved.
         </p>
       </aside>

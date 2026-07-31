@@ -34,7 +34,9 @@ export const GET = withProjectMember<{ projectId: string; specId: string }>(
     // the caller was authorized for, not merely that it exists.
     const spec = await prisma.projectSpec.findFirst({
       where: { id: specId, projectId },
-      select: { id: true, filePath: true },
+      // `version` names the downloaded file, and this lookup is already the
+      // one that proves the spec belongs to the project — no second read.
+      select: { id: true, version: true, filePath: true },
     });
 
     if (!spec) {
@@ -58,7 +60,7 @@ export const GET = withProjectMember<{ projectId: string; specId: string }>(
       status: 200,
       headers: {
         "Content-Type": `${SPEC_CONTENT_TYPE}; charset=utf-8`,
-        "Content-Disposition": `attachment; filename="${specDownloadFilename(spec.id)}"`,
+        "Content-Disposition": `attachment; filename="${specDownloadFilename(spec.version)}"`,
         // A per-user artifact behind an access check — never store it in a
         // shared cache.
         "Cache-Control": "private, no-store",

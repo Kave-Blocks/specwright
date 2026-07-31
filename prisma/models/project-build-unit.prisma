@@ -1,0 +1,109 @@
+enum BuildUnitStatus {
+  SPECCED
+  IN_PROGRESS
+  SHIPPED
+  DEFERRED
+  BLOCKED
+}
+
+enum BuildUnitVerified {
+  NONE
+  STRUCTURAL
+  PARTIAL
+  BROWSER
+}
+
+enum BuildUnitSource {
+  MANUAL
+  SPEC
+  CHANGE
+}
+
+/// One piece of work a project intends to build. The `status` and `verified`
+/// vocabularies mirror the `Status` and `Verified` columns of
+/// `context/progress-tracker.md`'s `## Unit Index` — that table is the source
+/// of the values, so a new member belongs there first.
+///
+/// Three properties a later change must not undo:
+///
+/// 1. `status`, `verified`, and `sequence` are **human-owned**. No automatic
+///    producer may write them — not the spec generator, not an importer, not a
+///    backfill. A producer may add a unit that does not exist yet and must
+///    otherwise leave the row alone, because these three columns are a team's
+///    own record of what they have actually built.
+/// 2. **Gaps in `sequence` are correct**, not damage to repair. Numbers come
+///    from `Project.nextBuildUnitSequence`, which never rolls back on a delete,
+///    so a number is never reused and a unit keeps the number people referred
+///    to it by. Nothing may renumber or compact this column.
+/// 3. **Supersession is not a status.** There is deliberately no `SUPERSEDED`
+///    member of `BuildUnitStatus`, and none may be added.
+///    `supersededByChangeId` below is a **third independent axis**, orthogonal
+///    to both existing vocabularies the same way 1. keeps `status` and
+///    `verified` independent of each other. A unit can read
+///    `shipped` / `browser` / superseded all at once, and each of the three is
+///    true: it *was* built, it *was* browser-verified, and a later change has
+///    since replaced it. Folding supersession into `status` would violate 1.
+///    (an automatic producer writing a human-owned column) and would overwrite
+///    `shipped` — destroying the record of what was actually built, which is
+///    the exact failure this column exists to avoid.
+model ProjectBuildUnit {
+  id        String            @id @default(cuid())
+  projectId String
+  sequence  Int
+  key       String
+  title     String
+  summary   String?
+  status    BuildUnitStatus   @default(SPECCED)
+  verified  BuildUnitVerified @default(NONE)
+  source    BuildUnitSource   @default(MANUAL)
+  // The spec this unit came from, when it came from one. `source` stays even
+  // though it is now nearly derivable from this column: `source` is what
+  // survives the null-out below, so a unit orphaned by a removed spec still
+  // knows it was not hand-typed.
+  specId    String?
+  // The change that produced this unit, when a change did. Set only by
+  // applying a proposal (`lib/changes/apply.ts`); a client may never write it.
+  changeId  String?
+  // The change that made this unit stale. **Not a status** — see 3. above.
+  // Writing it changes nothing else about the row: the unit keeps its title,
+  // summary, `status`, `verified`, and `sequence` exactly as they were, because
+  // an already-shipped unit still reads `shipped` — it was.
+  supersededByChangeId String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  // `SetNull`, never `Cascade`. A build unit is human-owned tracked work
+  // (see 1. above); cascading from the spec would let an artifact clean-up
+  // destroy a person's record of what they built. Losing the lineage is the
+  // acceptable loss here — losing the unit is not.
+  spec    ProjectSpec? @relation(fields: [specId], references: [id], onDelete: SetNull)
+  // Both change links are `SetNull`, for the same reason `specId` is: a build
+  // unit is human-owned tracked work and must never be deleted because an
+  // artifact referencing it was. Losing the lineage is the acceptable loss;
+  // losing the unit is not.
+  //
+  // No route deletes a `ProjectChange` row today — `40`'s `DELETE` discards by
+  // status and keeps the row, because a proposal someone rejected is a decision
+  // worth keeping — so this is a **database-level guarantee rather than a
+  // reachable path**. It is stated here so a future delete route inherits the
+  // rule instead of rediscovering it: whatever removes a change must leave
+  // every unit it created or superseded standing.
+  //
+  // Two relations to the same model must both be named, so the names say which
+  // direction each carries.
+  createdByChange    ProjectChange? @relation("ChangeCreatedUnits", fields: [changeId], references: [id], onDelete: SetNull)
+  supersededByChange ProjectChange? @relation("ChangeSupersededUnits", fields: [supersededByChangeId], references: [id], onDelete: SetNull)
+  // Change proposals that name this unit as affected. Cascades, so deleting a
+  // unit removes the impact rows rather than leaving them dangling.
+  impacts ProjectChangeImpact[]
+
+  // The natural key a future automatic producer matches a unit against, derived
+  // from the title. Renaming a unit re-derives it, so a rename is how a person
+  // makes a unit match what a spec will call it.
+  @@unique([projectId, key])
+  // Units are always listed in build order within a project. This unique
+  // already provides the index that ordering needs, so no separate
+  // `@@index([projectId, sequence])` is required.
+  @@unique([projectId, sequence])
+}

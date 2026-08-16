@@ -35,13 +35,18 @@ Ordered by leverage — what unblocks the most for the least effort, first.
 | Plan | Closes | Blocked on | Rough effort |
 | --- | --- | --- | --- |
 | [collaborator-account.md](collaborator-account.md) | Auth gap in units 38, 39, 40, 41 | A second Clerk account (a person) | ~15 min |
-| [browser-verification-40-41.md](browser-verification-40-41.md) | Unit 41's UI, unit 40's failure UI | Nothing | ~45 min |
+| [browser-verification-40-41.md](browser-verification-40-41.md) | Unit 41's UI, unit 42's notice, unit 40's failure UI | Nothing | ~60 min |
 | [regression-harness.md](regression-harness.md) | No cross-unit regression safety | Nothing | ~30 min |
 | [deferred-contrast-measurement.md](deferred-contrast-measurement.md) | Unit 38a item 6's five deferred sites | Nothing | ~30 min |
 | [trigger-deploy-audit.md](trigger-deploy-audit.md) | Unknown production state of three tasks | Nothing | ~15 min |
 | [accepted-limits.md](accepted-limits.md) | Nothing — it records what is **not** worth chasing | Nothing | Read once |
 
-Unit **42** ([`../feature-specs/42-spec-drift.md`](../feature-specs/42-spec-drift.md)) is the one
-gap from this sweep that is genuinely new capability, so it is a numbered unit rather than a plan.
-It closes the read half of the change loop: after `41` applies a proposal, the spec no longer
-describes the build list, and nothing currently says so.
+Unit **42** ([`../progress/42-spec-drift.md`](../progress/42-spec-drift.md)) was the one gap from
+this sweep that is genuinely new capability, so it was a numbered unit rather than a plan. It
+**shipped 2026-08-16** and closed the read half of the change loop: after `41` applies a proposal,
+the spec no longer describes the build list, and now something says so.
+
+Building it turned up the thing this folder exists to prevent being lost — the drift is countable
+but **not yet resolvable**, because a spec is generated from the canvas and an applied change never
+reaches it. That is the tracker's second open question, now the blocking dependency for the loop
+rather than a general concern. It is new capability, so it will be unit **43** rather than a plan.

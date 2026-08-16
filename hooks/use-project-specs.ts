@@ -7,6 +7,16 @@ import type { ProjectSpecListResponse, ProjectSpecSummary } from "@/types/specs"
 export interface UseProjectSpecsResult {
   /** The project's specs, newest first. Empty until the first load resolves. */
   specs: ProjectSpecSummary[]
+  /**
+   * Applied changes the current spec does not describe — `0` when it is up to
+   * date, and `0` while the first load is still in flight.
+   *
+   * Refreshed by the same reload the hook already performs after a generation
+   * finishes, so generating a spec clears the drift with no second mechanism.
+   */
+  appliedSinceCurrentSpec: number
+  /** The version the count is measured against, or `null` with no specs. */
+  currentSpecVersion: number | null
   /** True while the list is being fetched (including a refresh). */
   isLoading: boolean
   /** Set when the list could not be loaded. */
@@ -16,6 +26,22 @@ export interface UseProjectSpecsResult {
 }
 
 const LOAD_ERROR = "Couldn’t load your specs. Please try again."
+
+/** The drift half of the response, held together so the two never disagree. */
+type SpecDriftState = Pick<
+  UseProjectSpecsResult,
+  "appliedSinceCurrentSpec" | "currentSpecVersion"
+>
+
+/**
+ * What drift reads as before the first response, and after a failed one: no
+ * drift. A notice inferred from an unloaded list would claim the spec is behind
+ * on every mount, before anything is known.
+ */
+const NO_DRIFT: SpecDriftState = {
+  appliedSinceCurrentSpec: 0,
+  currentSpecVersion: null,
+}
 
 /**
  * Load a project's spec metadata from `GET /api/projects/{projectId}/specs`.
@@ -27,6 +53,9 @@ const LOAD_ERROR = "Couldn’t load your specs. Please try again."
  */
 export function useProjectSpecs(projectId: string): UseProjectSpecsResult {
   const [specs, setSpecs] = useState<ProjectSpecSummary[]>([])
+  // Held beside the list, not derived from it: drift is a fact about changes,
+  // and nothing in the spec metadata can say how many changes came after.
+  const [drift, setDrift] = useState<SpecDriftState>(NO_DRIFT)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -53,16 +82,29 @@ export function useProjectSpecs(projectId: string): UseProjectSpecsResult {
           throw new Error(`Spec list failed (${response.status})`)
         }
 
-        const { specs: loaded } =
-          (await response.json()) as ProjectSpecListResponse
+        const {
+          specs: loaded,
+          appliedSinceCurrentSpec,
+          currentSpecVersion,
+        } = (await response.json()) as ProjectSpecListResponse
 
         if (requestRef.current !== requestId) return
         setSpecs(loaded ?? [])
+        // Defaulted rather than trusted: the two fields cross the network, and
+        // a response that predates them would otherwise render `undefined`
+        // changes since version `undefined`.
+        setDrift({
+          appliedSinceCurrentSpec: appliedSinceCurrentSpec ?? 0,
+          currentSpecVersion: currentSpecVersion ?? null,
+        })
         setError(null)
       } catch (loadError) {
         // A superseded request was aborted on purpose — not an error.
         if (controller.signal.aborted) return
         console.error(loadError)
+        // A failed load knows nothing about drift, so it must not keep
+        // asserting the last count it saw.
+        setDrift(NO_DRIFT)
         setError(LOAD_ERROR)
       } finally {
         if (requestRef.current === requestId) {
@@ -78,7 +120,7 @@ export function useProjectSpecs(projectId: string): UseProjectSpecsResult {
   const refresh = useCallback(() => setReloadKey((key) => key + 1), [])
 
   return useMemo(
-    () => ({ specs, isLoading, error, refresh }),
-    [specs, isLoading, error, refresh]
+    () => ({ specs, ...drift, isLoading, error, refresh }),
+    [specs, drift, isLoading, error, refresh]
   )
 }

@@ -27,9 +27,32 @@ export interface ProjectSpecSummary {
   createdAt: string
 }
 
-/** Response body of `GET /api/projects/{projectId}/specs`. */
+/**
+ * Response body of `GET /api/projects/{projectId}/specs`.
+ *
+ * The two drift fields ride on the listing rather than on a route of their own:
+ * the one surface that renders them — the Specs view — already calls this on
+ * mount, so a second endpoint would double the requests to say one number.
+ */
 export interface ProjectSpecListResponse {
   specs: ProjectSpecSummary[]
+  /**
+   * Applied changes reasoned against the version that is still current — work
+   * the spec does not describe. `0` when the spec is up to date, and `0` when
+   * the project has no spec at all.
+   *
+   * Derived from columns that already exist, never stored: see
+   * `countAppliedChangesSinceCurrentSpec` in `lib/changes.ts`.
+   */
+  appliedSinceCurrentSpec: number
+  /**
+   * The version the count is measured against, or `null` with no specs.
+   *
+   * A plain number, like `ProjectSpecSummary.version` — no spec id and no
+   * change id travels here, the same discipline that keeps `filePath` off the
+   * summary.
+   */
+  currentSpecVersion: number | null
 }
 
 /**

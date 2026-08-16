@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 
 import { withProjectMember } from "@/lib/api-auth";
+import { countAppliedChangesSinceCurrentSpec } from "@/lib/changes";
 import { prisma } from "@/lib/prisma";
 import { specDownloadFilename } from "@/lib/spec-agent/storage";
-import type { ProjectSpecSummary } from "@/types/specs";
+import type {
+  ProjectSpecListResponse,
+  ProjectSpecSummary,
+} from "@/types/specs";
 
 /**
  * List a project's generated specs, newest first.
@@ -21,15 +25,25 @@ import type { ProjectSpecSummary } from "@/types/specs";
  * Ordering stays newest-first by `createdAt`. Versions ascend with creation, so
  * ordering by `version` would produce the same list by a less obvious route —
  * and `@@index([projectId, createdAt])` already serves this one.
+ *
+ * The response also carries how far the spec has fallen behind the build list
+ * (`42`). That is measured here rather than through a route of its own because
+ * the Specs view already calls this one on mount — a second endpoint would
+ * double the requests to report a single number, and the two would then be
+ * fetched at different moments and could disagree on screen.
  */
 export const GET = withProjectMember<{ projectId: string }>(
   async (_request, { project }) => {
-    const rows = await prisma.projectSpec.findMany({
-      // The project the guard resolved, never the raw path param.
-      where: { projectId: project.id },
-      orderBy: { createdAt: "desc" },
-      select: { id: true, version: true, createdAt: true },
-    });
+    // Independent reads, so they overlap rather than queue. Both are scoped to
+    // the project the guard resolved, never the raw path param.
+    const [rows, drift] = await Promise.all([
+      prisma.projectSpec.findMany({
+        where: { projectId: project.id },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, version: true, createdAt: true },
+      }),
+      countAppliedChangesSinceCurrentSpec(project.id),
+    ]);
 
     const specs: ProjectSpecSummary[] = rows.map((row) => ({
       id: row.id,
@@ -38,6 +52,12 @@ export const GET = withProjectMember<{ projectId: string }>(
       createdAt: row.createdAt.toISOString(),
     }));
 
-    return NextResponse.json({ specs });
+    const body: ProjectSpecListResponse = {
+      specs,
+      appliedSinceCurrentSpec: drift.appliedSinceCurrentSpec,
+      currentSpecVersion: drift.currentSpecVersion,
+    };
+
+    return NextResponse.json(body);
   },
 );

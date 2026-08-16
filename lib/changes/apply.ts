@@ -11,6 +11,7 @@ import {
   UNIT_SELECT,
 } from "@/lib/build-units"
 import { readChangeProposal } from "@/lib/change-agent/storage"
+import { currentSpecVersionOf } from "@/lib/changes"
 import { prisma } from "@/lib/prisma"
 import type { BuildUnitSummary } from "@/types/build-units"
 
@@ -334,24 +335,10 @@ export async function applyChange(
   }
 }
 
-/**
- * The project's current highest spec version, or `null` when it has no specs.
- *
- * Read from the spec rows rather than from `Project.nextSpecVersion - 1`: the
- * counter records the last number *assigned*, which is not the same as the
- * highest version that still exists once a spec has been removed. What the
- * staleness check means by "current" is the newest spec somebody could be
- * looking at.
- *
- * `null` cannot happen for a change that exists — `baseSpecId` is required and
- * `onDelete: Restrict`, so the base spec is always present — but the check
- * treats it as "nothing to be stale against" rather than asserting.
+/*
+ * `currentSpecVersionOf` used to live here, private to this module. `42` needs
+ * the same answer to measure spec drift, so it moved to `lib/changes.ts` rather
+ * than being written a second time — the reasoning about why the version is
+ * read from the spec rows and not from `Project.nextSpecVersion - 1` travelled
+ * with it.
  */
-async function currentSpecVersionOf(projectId: string): Promise<number | null> {
-  const newest = await prisma.projectSpec.findFirst({
-    where: { projectId },
-    orderBy: { version: "desc" },
-    select: { version: true },
-  })
-  return newest?.version ?? null
-}

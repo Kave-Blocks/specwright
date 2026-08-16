@@ -68,7 +68,14 @@ function formatSpecDate(iso: string): string {
  * dialog chrome.
  */
 export function SpecsView({ projectId }: { projectId: string }) {
-  const { specs, isLoading, error: listError, refresh } = useProjectSpecs(projectId)
+  const {
+    specs,
+    appliedSinceCurrentSpec,
+    currentSpecVersion,
+    isLoading,
+    error: listError,
+    refresh,
+  } = useProjectSpecs(projectId)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   // Derived, not synced: falling back to the newest spec (`specs[0]`, the list
@@ -81,8 +88,12 @@ export function SpecsView({ projectId }: { projectId: string }) {
   return (
     <div className="flex h-full flex-1 overflow-hidden pl-(--canvas-inset-left,0px) transition-[padding-left] duration-200 ease-out">
       <div className="flex w-80 shrink-0 flex-col overflow-hidden border-r border-surface-border">
-        <div className="p-3">
+        <div className="space-y-2 p-3">
           <GenerateSpecButton projectId={projectId} onGenerated={refresh} />
+          <SpecDriftNotice
+            count={appliedSinceCurrentSpec}
+            currentVersion={currentSpecVersion}
+          />
         </div>
 
         <ScrollArea className="flex-1">
@@ -148,6 +159,60 @@ export function SpecsView({ projectId }: { projectId: string }) {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+/**
+ * How far the spec has fallen behind the build list, said where it can be acted
+ * on — directly under the Generate Spec control that resolves it.
+ *
+ * **Nothing has gone wrong here.** A spec going out of date is the expected
+ * consequence of applying a change, so this takes `role="status"` and the same
+ * neutral well `41`'s apply outcome uses — never `role="alert"`, `text-error`,
+ * or a warning colour. `--warning` in particular already reads as a
+ * verification level on the Build tab, and borrowing it would say "this is
+ * broken" about a system working exactly as designed.
+ *
+ * At zero it renders nothing. Absence is the signal — the same rule `38`
+ * applied to the source-spec badge — so there is no "spec is current" banner to
+ * read past on every visit. It deliberately adds **no second generate button**.
+ *
+ * **It does not promise that regenerating fixes this, because it would not.**
+ * `lib/spec-agent/generate.ts` writes a spec from the canvas graph, the
+ * conversation, and the brief — never from the build list — and `41` applies a
+ * change without touching the canvas. So a spec generated right now would miss
+ * the applied work exactly as this one does, while the count reset to zero,
+ * which is the one reading that would leave somebody worse off than no notice
+ * at all. Until an applied change reaches the canvas, the honest instruction is
+ * to put it there first.
+ */
+function SpecDriftNotice({
+  count,
+  currentVersion,
+}: {
+  count: number
+  currentVersion: number | null
+}) {
+  // `currentVersion` is never null while the count is above zero — a project
+  // with no spec has nothing to be behind — but the notice names the version,
+  // so it renders nothing rather than "since Version null" if that ever breaks.
+  if (count <= 0 || currentVersion === null) return null
+
+  return (
+    <div
+      role="status"
+      className="space-y-1 rounded-xl border border-surface-border bg-base p-3"
+    >
+      <p className="text-xs text-copy-primary">
+        {count === 1 ? "1 change" : `${count} changes`} applied since Version{" "}
+        {currentVersion}.
+      </p>
+      <p className="text-xs text-copy-muted">
+        This spec predates that work. Specs are written from the canvas, and
+        applying a change doesn’t update it — add the change to the canvas
+        first, or a new spec will miss it too.
+      </p>
     </div>
   )
 }

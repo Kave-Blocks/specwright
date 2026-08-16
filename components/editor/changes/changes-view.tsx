@@ -812,6 +812,10 @@ function StaleNotice({
  *
  * `role="status"` rather than `alert` — nothing went wrong, and this is the
  * result of an action the person just took.
+ *
+ * It also names the drift the apply just created (`42`). This is the moment the
+ * spec falls behind, so it is the moment a person is most able to act on it —
+ * the Specs view counts the same fact, but only once somebody goes looking.
  */
 function ApplyOutcome({ outcome }: { outcome: ChangeApplyResponse }) {
   const created = outcome.created.length
@@ -849,6 +853,20 @@ function ApplyOutcome({ outcome }: { outcome: ChangeApplyResponse }) {
       <p className="text-xs text-copy-muted">
         Superseded units keep their status, verification, and position — see the
         Build tab.
+      </p>
+      {/* Unconditional, and it matches what the Specs view counts: drift is a
+       * property of the change having been applied, not of how many units it
+       * happened to create, so a proposal that created nothing still leaves the
+       * spec describing a build list that has moved on.
+       *
+       * It sends people to the canvas rather than to Generate Spec: a spec is
+       * written from the canvas graph, and this apply did not touch it, so
+       * regenerating now would produce a spec that misses this change while
+       * clearing the drift count. See `SpecDriftNotice` in specs-view.tsx. */}
+      <p className="text-xs text-copy-muted">
+        The spec no longer describes this build list. Specs are written from the
+        canvas, which this didn’t change — add it there before generating a new
+        spec, or the new one will miss it too.
       </p>
     </div>
   )

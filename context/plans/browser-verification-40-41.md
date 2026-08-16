@@ -1,8 +1,9 @@
-# Browser Verification — Unit 41's UI and Unit 40's Failure State
+# Browser Verification — Unit 41's UI, Unit 42's Notice, and Unit 40's Failure State
 
-**Closes:** unit 41's entire UI surface, plus the one unit 40 state that never rendered
+**Closes:** unit 41's entire UI surface, unit 42's two surfaces, plus the one unit 40 state that
+never rendered
 **Blocked on:** nothing — this is dispatchable now
-**Effort:** ~45 minutes across two passes
+**Effort:** ~60 minutes across three passes
 
 ## What the gap is
 
@@ -21,6 +22,19 @@ session — but nothing it *renders* has ever been seen:
 **Unit 40's proposal-failure UI never rendered either.** Every QA run succeeded, so the terminal
 error presentation — `settle(failed, failureText)` preferring the run's own published message
 over the generic line, which is the exact regression unit 37 fixed — has not been observed live.
+
+**Unit 42 (added 2026-08-16) inherits the same gap, and its state is created by pass 1 anyway.**
+31 library checks prove the count; nothing it renders has been seen:
+
+- the drift notice under Generate Spec on `/editor/[roomId]/specs` — its absence at zero, its
+  singular at one change, its plural at two
+- that it names the right version, and that generating a spec makes it disappear
+- the line added to unit 41's apply outcome
+- both at `text-copy-muted` in the `bg-base` well, which is the same tone pairing the badge work
+  above is being checked for
+
+Applying a change in pass 1 *is* the setup for this, so it costs one extra route visit rather
+than its own session.
 
 ## Why it matters
 
@@ -95,6 +109,26 @@ the project is on v2 while the change still points at v1.
 - Keyboard: the clear control and the Apply control are reachable by Tab and activate on Enter;
   focus does not fall to `<body>` when a panel closes.
 
+## Pass 1b — Unit 42's drift notice
+
+Runs straight off pass 1's state, in the same session. **Do not apply a fresh change for it.**
+
+1. Before applying anything, open `/editor/[roomId]/specs`. **No drift notice may be present** —
+   absence at zero is the design, not an oversight.
+2. Apply a change (pass 1 already does this). Read the apply outcome's last line: it must send the
+   reader to the **canvas**, not to Generate Spec. If it says regenerating brings the spec up to
+   date, the copy has regressed to what the spec originally dictated — see the unit's progress file
+   for why that instruction is false.
+3. Return to Specs. The notice reads "1 change applied since Version {n}", naming the version the
+   list actually shows as newest.
+4. Apply a second change, return, and confirm it reads "2 changes" — the plural, not a second
+   notice.
+5. Generate a spec. The notice disappears. **Note in the write-up that the spec produced does not
+   contain the applied changes** — that is the known open question, not a bug in this unit, and
+   observing it live is worth recording.
+6. Check the notice's contrast in the `bg-base` well at both text tones, alongside the badge check
+   in pass 1.
+
 ## Pass 2 — Unit 40's failure UI
 
 Forcing a genuine task failure is cheap and does **not** require exhausting the quota.
@@ -124,9 +158,12 @@ Forcing a genuine task failure is cheap and does **not** require exhausting the 
    observed, including any screenshot findings on badge crowding at four badges.
 2. Add one to `context/progress/40-change-proposals.md` for pass 2, quoting the actual message the
    run published.
-3. Update `context/progress-tracker.md`: unit 41 `partial → browser` if pass 1 is clean and the
-   collaborator caveat is separately resolved; unit 40 drops its "failure UI never observed" line.
-4. Delete this plan and its row in [`README.md`](README.md).
+3. Add one to `context/progress/42-spec-drift.md` for pass 1b, including what the regenerated spec
+   actually contained.
+4. Update `context/progress-tracker.md`: unit 41 `partial → browser` if pass 1 is clean and the
+   collaborator caveat is separately resolved; unit 42 `structural → partial` (its HTTP-layer
+   checks stay open regardless); unit 40 drops its "failure UI never observed" line.
+5. Delete this plan and its row in [`README.md`](README.md).
 
 ## If the badge row is crowded
 

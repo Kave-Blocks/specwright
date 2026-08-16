@@ -67,7 +67,7 @@ the file says which) · `none`.
 | 39 | [spec-versions-and-lineage](progress/39-spec-versions-and-lineage.md) | shipped | browser | Specs numbered per project; build units track source version; backfill verified at depth |
 | 40 | [change-proposals](progress/40-change-proposals.md) | shipped | browser | Proposals generate and render end-to-end, applying nothing; no-spec refusal at boundary. |
 | 41 | [change-application](progress/41-change-application.md) | shipped | partial | Applying a change creates the new units and marks stale ones superseded **without** rewriting them; 59 library + 36 HTTP checks pass. No browser pass was run, so the UI is unobserved. |
-| 42 | [spec-drift](feature-specs/42-spec-drift.md) | specced | none | Makes "the spec is behind the build list" visible and countable after a change is applied; derived from existing columns, no migration, no model call |
+| 42 | [spec-drift](progress/42-spec-drift.md) | shipped | structural | Drift counted from existing columns — no migration, no model call; 31 library checks pass. Notice and apply-outcome line are unobserved, and the listing route's new fields are unchecked over real HTTP |
 
 ### Other work
 
@@ -90,6 +90,10 @@ Work with no single owning unit — cross-cutting QA passes, branding, layout re
 - **Build units have no automatic producer for a project's *first* set.** `38` defers deriving units from a generated spec, and `39` does not add it. After `41` ships, the change path produces units automatically while the initial path does not — Specwright will generate five units when asked for offline mode, but the original twenty are typed by hand. The asymmetry is the clearest candidate for the next unit; `38`'s producer contract (match on `key`, no-op on conflict, never write a human-owned column) is already the contract it would be written against.
 
 - **Applying a change never redraws the canvas, and the canvas is what specs are generated from.** `41` updates the build list only. `lib/spec-agent/generate.ts` states that the canvas is the source of truth for what the system contains, so a change that never reaches the canvas never reaches a later spec — a regenerated spec would silently drop everything the changes added. This is why `41` deliberately writes no spec. Pushing an applied change onto the canvas, through the existing design path, needs to be its own unit before a project accumulates several changes.
+
+  **Raised to the top of the queue by `42` (2026-08-16), which made the consequence reachable from the UI.** `42`'s spec had both surfaces tell the user that generating a new spec brings it up to date with the build list. That instruction is false in the system as built, and it is the *only* instruction the drift notice could give that leaves someone worse off than no notice at all: pressing Generate produces a spec that still misses the applied work, **and** resets the drift count to zero, because the count derives from spec versions and any new version clears it. The indicator would then read "resolved" over a spec that resolved nothing.
+
+  `42` shipped with both surfaces pointing at the **canvas** instead, and the reasoning recorded in `architecture-context.md` under `## Spec Drift` and in `ui-context.md` under Specs. That is honest, but it is a workaround: the loop is closed on *reading* the drift and still open on *resolving* it. The next unit is the canvas write-back — after it, and only after it, the notice can safely say "regenerate".
 
 - **OpenAI quota is exhausted (hit 2026-07-29):** the account behind `OPENAI_API_KEY` returns `429 — "You exceeded your current quota"` (`insufficient_quota`). No AI generation (design or spec) can run until billing is topped up. This blocked the content-level verification of unit `36`; the four checks still outstanding are listed under "Not verified" in [`progress/36-stack-aware-spec-generation.md`](progress/36-stack-aware-spec-generation.md).
 

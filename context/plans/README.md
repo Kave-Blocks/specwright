@@ -35,7 +35,7 @@ Ordered by leverage — what unblocks the most for the least effort, first.
 | Plan | Closes | Blocked on | Rough effort |
 | --- | --- | --- | --- |
 | [collaborator-account.md](collaborator-account.md) | Auth gap in units 38, 39, 40, 41 | A second Clerk account (a person) | ~15 min |
-| [browser-verification-40-41.md](browser-verification-40-41.md) | Unit 41's UI, unit 42's notice, unit 40's failure UI | Nothing | ~60 min |
+| [browser-verification-40-41.md](browser-verification-40-41.md) | Unit 40's failure UI (41's and 42's passes done 2026-08-16) | Nothing | ~20 min |
 | [regression-harness.md](regression-harness.md) | No cross-unit regression safety | Nothing | ~30 min |
 | [deferred-contrast-measurement.md](deferred-contrast-measurement.md) | Unit 38a item 6's five deferred sites | Nothing | ~30 min |
 | [trigger-deploy-audit.md](trigger-deploy-audit.md) | Unknown production state of three tasks | Nothing | ~15 min |

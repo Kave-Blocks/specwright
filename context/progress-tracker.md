@@ -66,8 +66,8 @@ the file says which) · `none`.
 | 38 | [build-units](progress/38-build-units.md) | shipped | partial | Build units schema, API, UI surface; cascade delete, Planned card, and HTTP concurrency + cross-project scoping all verified. Only the collaborator path (needs a second Clerk account) is unproven. |
 | 39 | [spec-versions-and-lineage](progress/39-spec-versions-and-lineage.md) | shipped | browser | Specs numbered per project; build units track source version; backfill verified at depth |
 | 40 | [change-proposals](progress/40-change-proposals.md) | shipped | browser | Proposals generate and render end-to-end, applying nothing; no-spec refusal at boundary. |
-| 41 | [change-application](progress/41-change-application.md) | shipped | partial | Applying a change creates the new units and marks stale ones superseded **without** rewriting them; 59 library + 36 HTTP checks pass. No browser pass was run, so the UI is unobserved. |
-| 42 | [spec-drift](progress/42-spec-drift.md) | shipped | structural | Drift counted from existing columns — no migration, no model call; 31 library checks pass. Notice and apply-outcome line are unobserved, and the listing route's new fields are unchecked over real HTTP |
+| 41 | [change-application](progress/41-change-application.md) | shipped | partial | Applying a change creates the new units and marks stale ones superseded **without** rewriting them; 59 library + 36 HTTP checks pass. Browser pass done 2026-08-16: all four badges render at once and the row is not crowded at any width; one real spacing bug found and fixed. Only the collaborator path (needs a second Clerk account) is unproven. |
+| 42 | [spec-drift](progress/42-spec-drift.md) | shipped | partial | Drift counted from existing columns — no migration, no model call; 31 library checks pass. Browser-verified 2026-08-16: absent at zero, singular at one, neutral styling, and both surfaces point at the canvas. The plural at two and the listing route's new fields over real HTTP are still unchecked |
 
 ### Other work
 
@@ -95,7 +95,14 @@ Work with no single owning unit — cross-cutting QA passes, branding, layout re
 
   `42` shipped with both surfaces pointing at the **canvas** instead, and the reasoning recorded in `architecture-context.md` under `## Spec Drift` and in `ui-context.md` under Specs. That is honest, but it is a workaround: the loop is closed on *reading* the drift and still open on *resolving* it. The next unit is the canvas write-back — after it, and only after it, the notice can safely say "regenerate".
 
-- **OpenAI quota is exhausted (hit 2026-07-29):** the account behind `OPENAI_API_KEY` returns `429 — "You exceeded your current quota"` (`insufficient_quota`). No AI generation (design or spec) can run until billing is topped up. This blocked the content-level verification of unit `36`; the four checks still outstanding are listed under "Not verified" in [`progress/36-stack-aware-spec-generation.md`](progress/36-stack-aware-spec-generation.md).
+- ~~**OpenAI quota is exhausted (hit 2026-07-29):**~~ — **resolved 2026-08-16.** The account behind `OPENAI_API_KEY` had been returning `429 — "You exceeded your current quota"` (`insufficient_quota`), blocking every AI path. A live `gpt-4o-mini` completion now answers **HTTP 200**, so design generation, spec generation, and change proposals can all run again.
+
+  **What this unblocks, none of it done yet:**
+  - Unit `36`'s four content-level checks, still listed under "Not verified" in [`progress/36-stack-aware-spec-generation.md`](progress/36-stack-aware-spec-generation.md) — the `## Tech Stack` section has never been read out of a real generated spec.
+  - Unit `37`'s retry-count observation, which needs a *deployed* run rather than a dev one (`retries.enabledInDev: false` makes a dev run single-attempt regardless). The original trace it should be checked against is kept below.
+  - Pass 2 of [`plans/browser-verification-40-41.md`](plans/browser-verification-40-41.md) — unit `40`'s proposal-failure UI, which needs a real run to fail rather than a quota outage to fake it.
+
+  The trace below is kept as written: it is what a deployed run should now be checked against, and a topped-up account is exactly when that check becomes possible.
 
 - ~~**A spent OpenAI quota is reported to the user as a transient failure, and it is not one.**~~ — **fixed by unit [`37`](progress/37-quota-error-surfacing.md).** A quota failure is now terminal on the first attempt and carries an honest message; the classification was confirmed against the live exhausted account. Two things remain: the AI SDK's own 3 internal retries stay (deliberate — see `37`'s Scope Limits), and Trigger's actual attempt count was never observed, because `retries.enabledInDev: false` makes a dev run single-attempt regardless. The original trace is kept below, since it is what a deployed run should now be checked against.
 

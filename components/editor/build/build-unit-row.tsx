@@ -362,9 +362,16 @@ export function BuildUnitRow({
             * value and one operation, removing it. */}
           {unit.supersededByChange !== null && (
             <div className="border-t border-surface-border pt-3">
+              {/* The space after the expression is explicit. Written as a
+                * literal it is the first thing on a text node that wraps to the
+                * next source line, and the compiler trims it — which rendered
+                * "Change 1replaced this unit's work." Caught in a browser pass;
+                * the source read correctly, so only the painted pixels showed
+                * it. Any `{expr} word` that wraps needs the same treatment. */}
               <p className="text-xs text-copy-muted">
-                Change {unit.supersededByChange} replaced this unit&apos;s work.
-                Its status and verification are untouched.
+                Change {unit.supersededByChange}{" "}
+                replaced this unit&apos;s work. Its status and verification are
+                untouched.
               </p>
               <Button
                 type="button"

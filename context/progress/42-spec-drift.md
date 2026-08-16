@@ -106,3 +106,43 @@ The count itself is correct and worth having — "this spec is older than N appl
 The first full run of `verify:drift` died in `saveProjectSpec` with Prisma `P2028`: an interactive transaction timing out at 5000 ms after **16636 ms** had passed. The blob upload is correctly *outside* that transaction — it is two DB statements against a remote Postgres, and the wall time was network latency, not work.
 
 It is not this unit's code and not a regression: `verify:spec-versions` (unit 39, untouched here) passed in full immediately afterwards, and the identical `verify:drift` run passed on retry. Recorded because it will look like a spec-drift failure the next time it happens, and because a 5 s interactive-transaction default against a remote database is thin — if it recurs, `saveProjectSpec`'s `$transaction` taking an explicit `timeout` is the fix, and it belongs to unit 27's code rather than this one.
+
+### Follow-up — 2026-08-16 — Browser pass
+
+Driven in a real signed-in browser against seeded fixtures, in the same session that closed unit
+`41`'s browser gap. Everything this unit renders has now been seen.
+
+**The notice behaves as designed, in the order that matters.** Checked *before* applying anything,
+the Specs view showed **no notice at all** — absence at zero is the design, and a notice there
+would have been the bug. After applying one change it read:
+
+> 1 change applied since Version 1.
+> This spec predates that work. Specs are written from the canvas, and applying a change doesn't
+> update it — add the change to the canvas first, or a new spec will miss it too.
+
+Singular "1 change" (not "1 changes"), and "Version 1" matched what the spec list itself showed.
+It sat directly under the Generate Spec control, in a bordered well with the count line in primary
+text over muted body text — **no red, no alert icon, no error treatment** — and both tones were
+legible against the well. That styling was the point: nothing has failed, and this had to look
+unlike the stale-change notice, which in the same pass rendered with red text and an alert icon
+because there a request genuinely *was* refused. The two now visibly mean different things.
+
+**The corrected copy survived to the screen.** The apply outcome's added line rendered verbatim as:
+
+> The spec no longer describes this build list. Specs are written from the canvas, which this
+> didn't change — add it there before generating a new spec, or the new one will miss it too.
+
+Both surfaces point at the **canvas**, not at Generate Spec. This was the single most important
+thing to confirm, because it is the deviation this unit took from its own spec — had the original
+"regenerating brings the spec up to date" wording survived, the notice would actively mislead.
+
+**Not verified, and why:**
+
+- **The plural at two.** "2 changes" was never rendered. Reaching a second applied change needs a
+  second proposal, which is a model call and fresh fixture state; the pass did not invent it. The
+  plural branch is proven only by the 31 library checks and by reading the ternary.
+- **The HTTP layer**, unchanged from the original entry: that `GET /specs` really carries the two
+  fields in a response body, still omits `filePath`, and refuses a non-member. The browser
+  exercised that route as a signed-in owner and the numbers were right on screen, which is
+  evidence the fields travel — but it is not a check of the body, and it says nothing about the
+  non-member path.

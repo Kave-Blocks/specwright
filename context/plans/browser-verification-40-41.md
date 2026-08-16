@@ -1,135 +1,48 @@
-# Browser Verification — Unit 41's UI, Unit 42's Notice, and Unit 40's Failure State
+# Browser Verification — Unit 40's Failure UI (what remains)
 
-**Closes:** unit 41's entire UI surface, unit 42's two surfaces, plus the one unit 40 state that
-never rendered
-**Blocked on:** nothing — this is dispatchable now
-**Effort:** ~60 minutes across three passes
+**Closes:** the one unit 40 state that has never rendered
+**Blocked on:** nothing — needs a Trigger.dev worker and one deliberate misconfiguration
+**Effort:** ~20 minutes
+
+> **Passes 1 and 1b are done (2026-08-16).** Unit 41's UI and unit 42's drift notice were both
+> driven in a real signed-in browser. Results are in
+> [`../progress/41-change-application.md`](../progress/41-change-application.md) and
+> [`../progress/42-spec-drift.md`](../progress/42-spec-drift.md) under `### Follow-up — 2026-08-16`.
+> Both units' `Verified` levels moved. What follows is the only part left.
 
 ## What the gap is
 
-**Unit 41 has no browser pass at all.** Its behaviour is proven at two layers — 59 library checks
-against real Postgres and Blob, 36 HTTP checks against a live dev server with a real Clerk
-session — but nothing it *renders* has ever been seen:
+**Unit 40's proposal-failure UI has never rendered.** Every QA run succeeded, so the terminal error
+presentation — `settle(failed, failureText)` preferring the run's own published message over the
+generic line, which is the exact regression unit 37 fixed — has not been observed live.
 
-- the Apply control on an expanded `proposed` change
-- the stale-change notice, its two version numbers, and its second confirmation
-- the outcome report (created / superseded counts, and the skipped-titles list)
-- the "replaced by change {n}" badge on a build row, **beside** the status and verification
-  badges rather than instead of them
-- the "Not superseded" clear control in the expanded row
-- the settled-state line on an applied or discarded change
-
-**Unit 40's proposal-failure UI never rendered either.** Every QA run succeeded, so the terminal
-error presentation — `settle(failed, failureText)` preferring the run's own published message
-over the generic line, which is the exact regression unit 37 fixed — has not been observed live.
-
-**Unit 42 (added 2026-08-16) inherits the same gap, and its state is created by pass 1 anyway.**
-31 library checks prove the count; nothing it renders has been seen:
-
-- the drift notice under Generate Spec on `/editor/[roomId]/specs` — its absence at zero, its
-  singular at one change, its plural at two
-- that it names the right version, and that generating a spec makes it disappear
-- the line added to unit 41's apply outcome
-- both at `text-copy-muted` in the `bg-base` well, which is the same tone pairing the badge work
-  above is being checked for
-
-Applying a change in pass 1 *is* the setup for this, so it costs one extra route visit rather
-than its own session.
+This was previously entangled with the exhausted OpenAI quota. It no longer is: **the quota was
+restored 2026-08-16**, so a *successful* run is now also possible, and the failure has to be forced
+deliberately rather than arriving for free.
 
 ## Why it matters
 
-Unit 41's central claim is *visual*: a superseded unit must visibly read `Shipped` **and**
-`Browser` **and** "replaced by change 4" at the same time. The database proves all three columns
-hold their values; only a browser can prove the row actually *shows* all three, in that order,
-at a legible contrast. That is the one claim the two existing harnesses structurally cannot make.
+Unit 37's whole point is that a failure explains itself honestly instead of saying "please try
+again" about something that cannot succeed. That fix is verified at the classification layer and
+never at the surface a person actually reads. If `RUN_FAILED_ERROR` has crept back in front of the
+published message, nothing currently in the repo would notice.
 
-The badge is also a new use of the house treatment at `text-copy-muted` on `bg-base` — the tone
-pairing unit 38 spent three follow-ups getting to 5.16:1. A fourth badge on the row is where
-crowding would first show.
+## Setting up the state
 
-## Pass 1 — Unit 41's UI
+`scripts/seed-browser-fixture.ts` creates a project with a spec, spec-attributed build units, and a
+stored proposal, owned by a real Clerk account, with **no model call and no borrowed session**:
+
+```
+npx tsx scripts/seed-browser-fixture.ts --email <the signed-in account>
+npx tsx scripts/seed-browser-fixture.ts --cleanup     # afterwards
+```
+
+Any project with a spec works — unit 40 refuses a proposal only when there is **no** spec.
+
+## The pass
 
 **Dispatch to `browser-qa`**, not the main session: a browser pass returns page snapshots and
 screenshots, and those belong in a cheap subagent that reports back in prose.
-
-### Setting up the state
-
-Do **not** hand-build a project. `scripts/verify-change-application-http.ts` already has a
-`seed()` that creates exactly the required state — a project with a spec, two `SHIPPED` /
-`BROWSER` units, and a hand-authored stored proposal — with no model call. Seed one and leave it
-undeleted:
-
-1. Temporarily comment out the `finally { await d.prisma.project.delete(...) }` in the `apply`
-   phase, or add a throwaway phase that seeds and returns the project id.
-2. `npm run verify:apply-http -- apply` and note the project id from the output.
-3. Open `/editor/{projectId}/changes` in the browser as the signed-in account.
-4. **Delete the project afterwards** — it is prefixed `verify-apply-http-`, so it is easy to spot.
-
-For the **stale** state, run `stalePhase`'s setup: seed, then call `saveProjectSpec` once more so
-the project is on v2 while the change still points at v1.
-
-### What to check
-
-**Changes view, expanded `proposed` change:**
-- Apply and Discard both present; Apply carries the primary treatment (`bg-brand text-white`).
-- Applying shows a pending spinner and the "Applying…" label, then the outcome report.
-- The outcome report states created and superseded counts with correct plural agreement, and
-  lists skipped titles by name when there are any. Seed a proposal whose first proposed title
-  duplicates an existing unit to see this branch.
-- After applying, the status badge flips to `Applied` and **both actions disappear**, replaced by
-  the settled line.
-
-**Stale change:**
-- The notice renders **inside the proposal body**, above the actions, with `role="alert"`.
-- It names both versions in prose ("reasoned against spec version 1, but the project is now on
-  version 2").
-- The Apply button is **gone** while the notice is up — the confirm inside it is the only way
-  forward.
-- The confirm button reads "Apply anyway against v2" and applying from it succeeds.
-- Nothing retries on its own: the refused request fires exactly once. Confirm in the network
-  panel.
-
-**Build view (`/editor/{projectId}/build`):**
-- A superseded row reads **`SHIPPED` · `BROWSER` · `replaced by change 1`** — all three badges,
-  in that order, left to right.
-- The badge is legible at 10px against the row's `bg-base` pill, at rest **and** under the
-  header's `hover:bg-elevated`.
-- Superseded rows sit in their **original position**, not reordered, not dimmed, not collapsed,
-  not hidden.
-- Expanding a superseded row shows the explanatory line and the "Not superseded" button;
-  clearing it removes only the badge — status chip, verification chip, title, and number are
-  unchanged.
-- A **non**-superseded row shows no such badge and no such control.
-
-**Cross-cutting:**
-- Zero console errors on both routes across fresh loads.
-- No failed network requests other than the deliberate 409s.
-- The floating project sidebar, when open, does not render on top of either view's controls —
-  the regression `pl-(--canvas-inset-left,0px)` exists to prevent.
-- Keyboard: the clear control and the Apply control are reachable by Tab and activate on Enter;
-  focus does not fall to `<body>` when a panel closes.
-
-## Pass 1b — Unit 42's drift notice
-
-Runs straight off pass 1's state, in the same session. **Do not apply a fresh change for it.**
-
-1. Before applying anything, open `/editor/[roomId]/specs`. **No drift notice may be present** —
-   absence at zero is the design, not an oversight.
-2. Apply a change (pass 1 already does this). Read the apply outcome's last line: it must send the
-   reader to the **canvas**, not to Generate Spec. If it says regenerating brings the spec up to
-   date, the copy has regressed to what the spec originally dictated — see the unit's progress file
-   for why that instruction is false.
-3. Return to Specs. The notice reads "1 change applied since Version {n}", naming the version the
-   list actually shows as newest.
-4. Apply a second change, return, and confirm it reads "2 changes" — the plural, not a second
-   notice.
-5. Generate a spec. The notice disappears. **Note in the write-up that the spec produced does not
-   contain the applied changes** — that is the known open question, not a bug in this unit, and
-   observing it live is worth recording.
-6. Check the notice's contrast in the `bg-base` well at both text tones, alongside the badge check
-   in pass 1.
-
-## Pass 2 — Unit 40's failure UI
 
 Forcing a genuine task failure is cheap and does **not** require exhausting the quota.
 
@@ -152,22 +65,25 @@ Forcing a genuine task failure is cheap and does **not** require exhausting the 
 
 5. **Restore `CHANGE_MODEL`** and restart the worker.
 
+## Two loose ends worth folding in
+
+Neither is unit 40's, both are cheap while a browser is already open:
+
+- **The build row's hover treatment.** A pixel diff of hover against rest showed *zero* difference,
+  which would contradict `ui-context.md`'s claim that badge contrast holds "under the row's
+  `hover:bg-elevated`". The class **is** present (`build-unit-row.tsx:284`) and the diff was taken
+  on an already-expanded row, so this is most likely a mis-targeted hover. One deliberate hover on a
+  **collapsed** row settles it.
+- **The sidebar overlay at ~700px.** At that width the sidebar becomes a full-width overlay that
+  dims the build list behind it, so the row cannot be read until it is dismissed. This is layout
+  behaviour, not a badge or unit 41 problem, but nothing records it. Confirm and, if real, it wants
+  its own unit rather than a patch in the moment.
+
 ## What to do with the result
 
-1. Add a `### Follow-up — YYYY-MM-DD` to `context/progress/41-change-application.md` with what was
-   observed, including any screenshot findings on badge crowding at four badges.
-2. Add one to `context/progress/40-change-proposals.md` for pass 2, quoting the actual message the
-   run published.
-3. Add one to `context/progress/42-spec-drift.md` for pass 1b, including what the regenerated spec
-   actually contained.
-4. Update `context/progress-tracker.md`: unit 41 `partial → browser` if pass 1 is clean and the
-   collaborator caveat is separately resolved; unit 42 `structural → partial` (its HTTP-layer
-   checks stay open regardless); unit 40 drops its "failure UI never observed" line.
-5. Delete this plan and its row in [`README.md`](README.md).
-
-## If the badge row is crowded
-
-Four badges plus a date on one line is the most this row has ever carried, and it is the likeliest
-finding. **Do not fix it by dropping a badge** — the whole unit exists so all of them show at
-once. The row already wraps (`flex flex-wrap`), so the fix, if one is needed, is spacing or
-ordering, and it is a `designer` question rather than a patch to make in the moment.
+1. Add a `### Follow-up — YYYY-MM-DD` to `context/progress/40-change-proposals.md`, quoting the
+   actual message the run published.
+2. If the hover check settles, add a line to `41-change-application.md`'s follow-up, which currently
+   records it as unresolved.
+3. Update `context/progress-tracker.md`: unit 40 drops its "failure UI never observed" line.
+4. Delete this plan and its row in [`README.md`](README.md).

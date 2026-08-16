@@ -112,3 +112,71 @@ The stale refusal answers 409 with **its own body shape** (`{ error, stale: { ba
 - **Concurrent applies at the HTTP layer.** The double-apply guard is proven sequentially (second request → 409) and by construction (the `status` requirement inside the `UPDATE`'s `WHERE`), not by two simultaneous requests racing.
 - **The collaborator path** — still inherited from unit 38's gap; needs a second Clerk account. A non-owner member applying a change, and a non-member getting 404, are both unproven.
 - **The Liveblocks and canvas scope limits** are argued rather than observed: nothing in this unit's code path imports or writes to the room, and no `ai-status-feed` / `ai-chat` publish exists in it, but no live room was watched during an apply.
+
+### Follow-up — 2026-08-16 — Browser pass
+
+The gap this file opened with ("no browser pass at all") is now closed. Driven in a real signed-in
+browser against seeded fixtures, on the plan in `context/plans/browser-verification-40-41.md`.
+
+**The central visual claim holds.** A superseded row renders `SHIPPED` · `BROWSER` · `FROM V1` ·
+`REPLACED BY CHANGE 1` — **all four badges at once**, left to right in that order. A non-superseded
+row shows only the first three, so the supersession badge appears exactly where it is earned.
+Superseded rows stayed in their original positions, undimmed, uncollapsed, unhidden, and the two
+created units landed at the end of the list reading `SPECCED`/`NONE`. The skipped duplicate was
+untouched. This is the one claim the library and HTTP harnesses structurally could not make.
+
+**The crowding question is answered — it is not crowded.** At 1280px all four badges sit on one
+line with roughly a third of the card width still free; at ~900px they still fit with ~90px spare;
+at ~700px with the sidebar closed, ~220px spare, text crisp and unwrapped. No width tested made
+the row wrap.
+
+The plan's framing of this question was wrong in two ways, recorded so the next reader does not
+look for what is not there: it asked about **"four badges plus a date"**, but a build row carries
+no date at all — collapsed or expanded. And the first attempt could not answer it, because the
+fixture seeded units with no `specId`, so the `FROM V1` badge never rendered and only three badges
+were on screen. A three-badge row proving comfortable says nothing about the four-badge one; the
+fixture was corrected and the pass re-run.
+
+**Everything else checked out.** Apply and Discard both present with Apply on the primary
+treatment; the outcome reporting created/superseded counts with correct plural agreement and
+naming the skipped title; both actions replaced by the settled line afterwards with the badge
+flipping to `APPLIED`; exactly one `POST /apply`, 200, no retry. The stale change refused with
+409, surfaced a notice naming **both** versions in prose, removed the plain Apply button so its
+confirm ("Apply anyway against v2") was the only way forward, and fired exactly once with no
+automatic retry. Delta kinds rendered as neutral badges, not a green/red diff palette.
+
+#### One real bug, found and fixed
+
+The expanded superseded row rendered **"Change 1replaced this unit's work."** — no space. The
+source read correctly (`Change {unit.supersededByChange} replaced …`), so this was only ever
+visible in painted pixels; the accessibility tree and a source reading both looked fine, and it
+took an enlarged screenshot to catch.
+
+The cause is narrow and worth stating precisely, because the obvious generalisation is wrong. The
+text node following the expression begins with a space and wraps onto the next source line, **and
+contains an HTML entity** (`&apos;`). Next's SWC compiler trimmed its leading space, emitting
+`["Change ", value, "replaced …"]`. The sibling construction in `changes-view.tsx` — same
+expression-then-space-then-wrapping-prose shape but **no entity** — compiles correctly, emitting
+`," skipped — the build list …"`, and renders with proper spacing (confirmed at the pixel level in
+the same pass). esbuild preserves the space in both cases, so this is an SWC behaviour, not a JSX
+rule.
+
+Fixed with an explicit `{" "}` and a comment at the site. Verified in the production chunk, which
+now emits `["Change ", a.supersededByChange, " ", "replaced …"]`, and then re-verified in the
+browser: the gap between "1" and "replaced" is now indistinguishable from the gaps around it.
+
+Every `.tsx` was scanned for that exact trigger shape — an expression followed by a space, then
+prose that both spans lines and contains an entity. **Zero remaining instances.** It was a one-off,
+not a class.
+
+#### Still not verified
+
+- **The transient "Applying…" state.** The request settled before a snapshot could be taken, so the
+  pending spinner was never observed — only the correct settled state after it.
+- **The collaborator path**, unchanged: still needs a second Clerk account.
+- **A hover treatment on the build row.** A pixel diff of hover against rest showed *zero*
+  difference, which would contradict `ui-context.md`'s claim that badge contrast holds "under the
+  row's `hover:bg-elevated`". `hover:bg-elevated` **is** present on the header button
+  (`build-unit-row.tsx:284`), and the diff was taken on an already-expanded row, so this is most
+  likely a mis-targeted hover rather than a regression. Recorded as unresolved rather than assumed
+  either way — it needs one deliberate check on a *collapsed* row.

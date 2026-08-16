@@ -8,6 +8,11 @@ else lives in the `## Unit Index` below, one row per unit, linking to its own fi
 Checks that need a person rather than an agent — a second account, a real payment — wait in
 [`context/qa/`](qa/), one file each. A unit's `Verified` level stays honest while they wait.
 
+Work that is decided but not started, and that no numbered unit owns — harness changes, deferred
+measurements, gap-closures against units that already shipped — waits in
+[`context/plans/`](plans/), one file each. Filing a plan changes no unit's `Verified` level either;
+only running the work does.
+
 ## Current Phase
 
 Nothing in flight. Pick the lowest-numbered unit in the index below that is not `shipped`.
@@ -62,6 +67,7 @@ the file says which) · `none`.
 | 39 | [spec-versions-and-lineage](progress/39-spec-versions-and-lineage.md) | shipped | browser | Specs numbered per project; build units track source version; backfill verified at depth |
 | 40 | [change-proposals](progress/40-change-proposals.md) | shipped | browser | Proposals generate and render end-to-end, applying nothing; no-spec refusal at boundary. |
 | 41 | [change-application](progress/41-change-application.md) | shipped | partial | Applying a change creates the new units and marks stale ones superseded **without** rewriting them; 59 library + 36 HTTP checks pass. No browser pass was run, so the UI is unobserved. |
+| 42 | [spec-drift](feature-specs/42-spec-drift.md) | specced | none | Makes "the spec is behind the build list" visible and countable after a change is applied; derived from existing columns, no migration, no model call |
 
 ### Other work
 

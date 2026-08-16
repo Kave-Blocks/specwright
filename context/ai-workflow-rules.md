@@ -76,6 +76,10 @@ Every unit of work gets its own file under `context/progress/`, never a new para
 
 A check that genuinely needs a human step — a second account, a real payment, a physical device — goes in `context/qa/<slug>.md` rather than being written off in a progress file's "not verified" list. See `context/qa/README.md` for the file shape. Two rules: the unit's `Verified` level does **not** improve because a check was filed, and the file is deleted once the check runs and its result lands in the owning unit's progress file.
 
+### Deferring Work That No Unit Owns
+
+Work that is decided but not started, and that would never belong inside a numbered unit — harness and tooling changes, deferred measurements, verification passes against units that already shipped, or a written decision *not* to chase something — goes in `context/plans/<slug>.md`. See `context/plans/README.md` for the file shape and how it differs from `feature-specs/`, `progress/`, and `qa/`. The same two rules apply: filing a plan improves nothing, and the file is deleted once the work lands and its result is recorded in the owning unit's progress file (or its own dated file, when it spans units).
+
 ## Before Moving To The Next Unit
 
 1. The current unit works end to end within its defined scope.

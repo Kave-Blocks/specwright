@@ -34,7 +34,7 @@ Ordered by leverage — what unblocks the most for the least effort, first.
 
 | Plan | Closes | Blocked on | Rough effort |
 | --- | --- | --- | --- |
-| [canvas-write-back-live-proof.md](canvas-write-back-live-proof.md) | Unit 43's whole `## Not Verified` list, incl. the end-to-end check the unit exists for | Nothing | ~45 min |
+| [canvas-write-back-live-proof.md](canvas-write-back-live-proof.md) | The room, browser, and end-to-end bullets of unit 43's `## Not Verified` — **not** its HTTP layer or collaborator path | Trigger.dev env vars, unconfirmed | ~45 min – 2 h |
 | [collaborator-account.md](collaborator-account.md) | Auth gap in units 38, 39, 40, 41 | A second Clerk account (a person) | ~15 min |
 | [browser-verification-40-41.md](browser-verification-40-41.md) | Unit 40's failure UI (41's and 42's passes done 2026-08-16) | Nothing | ~20 min |
 | [regression-harness.md](regression-harness.md) | No cross-unit regression safety | Nothing | ~30 min |

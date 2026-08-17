@@ -1,8 +1,11 @@
 # Canvas Write-Back — The Live Proof Unit 43 Has Never Had
 
-**Closes:** every unverified line in [`../progress/43-canvas-write-back.md`](../progress/43-canvas-write-back.md)'s `## Not Verified`, and the tracker's second open question, which is currently *structurally* closed and *factually* unproven
-**Blocked on:** nothing — the OpenAI quota was restored 2026-08-16
-**Effort:** ~45 minutes, most of it setup
+**Closes:** two of the seven bullets in [`../progress/43-canvas-write-back.md`](../progress/43-canvas-write-back.md)'s `## Not Verified` — *everything that touches a Liveblocks room*, and *the end-to-end check this whole unit exists for* — plus the browser bullet in full if Part 4 is done, and the `trigger dev` half of the deployment bullet. It also settles the tracker's second open question, which is currently *structurally* closed and *factually* unproven.
+
+**Does not close, and no browser pass can:** the **HTTP layer** (the route's two 409s, its 404 masking, the signed-out and non-member paths — that needs a `verify:canvas-http` script, which does not exist); the **collaborator path** ([`collaborator-account.md`](collaborator-account.md)); **`trigger deploy`** ([`trigger-deploy-audit.md`](trigger-deploy-audit.md)); and **model behaviour**, which is unfalsifiable by design. Read `## What to do with the result` before touching the tracker — however well this goes, 43 lands on `partial`, never `browser`.
+
+**Blocked on:** one unconfirmed ops step — see prerequisite 2. The OpenAI quota was restored 2026-08-16, so the model half is clear.
+**Effort:** ~45 minutes if prerequisite 2 is already done. Closer to two hours if it is not, and nobody has checked.
 
 ## What the gap is
 
@@ -38,10 +41,14 @@ retire: the loop *looks* closed and has never been observed closing.
 These are the reason this is a 45-minute job rather than a 10-minute one. Do them in order.
 
 1. **A signed-in Clerk account** in the browser the pass will run in.
-2. **Task environment variables.** `OPENAI_API_KEY` and `LIVEBLOCKS_SECRET_KEY` must exist in the
-   **Trigger.dev** environment, not just `.env.local` — task env is not auto-loaded from Next's
-   env file. This is the standing ops item in the tracker's open questions; it blocks every AI
-   path, not just this one.
+2. **Task environment variables — this is the blocker, and it has never been confirmed done.**
+   `OPENAI_API_KEY` and `LIVEBLOCKS_SECRET_KEY` must exist in the **Trigger.dev** environment, not
+   just `.env.local` — task env is not auto-loaded from Next's env file. This is still an unticked
+   item in the tracker's `## Open Questions` ("Ops for AI generation to run live"), and it blocks
+   every AI path rather than just this one. **Check it before booking the time**: the Trigger.dev
+   dashboard's environment-variables page for this project, or a `syncEnvVars` extension in
+   `trigger.config.ts`. A missing key does not present as a config error — it presents as a run
+   that starts and then dies inside the model call, which reads exactly like the guard working.
 3. **The dev worker running**: `npm run trigger:dev`. The `canvas-sync` task has never been picked
    up by a worker, so **watch the startup output for it by name.** A task that fails to register
    is the first thing that will go wrong here, and it will present as the run never starting.
@@ -101,10 +108,24 @@ screenshots, and those belong in a cheap subagent that reports back in prose.
     is no re-push.
 12. Expand a change that is still `PROPOSED` (the `browser-fixture-stale` project has one). It
     must offer Apply and Discard and **no** push control.
-13. **The removals branch.** The seeded proposal has no `removed` entries, so the skipped-removal
-    list will not render on its own. Either hand-edit a proposal document to include one, or
-    accept this state as unobserved and say so — do not report it as passing because the code path
-    exists.
+Items 13 and 14 are the **two of the control's five states the fixture cannot reach on its own**.
+Parts 1–3 cover the other three (applied-and-unpushed, running, pushed, and the outcome well
+without removals). Neither of these two is expensive, and skipping both leaves 40% of the control
+unobserved after a pass whose entire purpose is observation.
+
+13. **The outcome well *with* removals.** The seeded proposal carries only `added` and `modified`
+    entries ([`../../scripts/seed-browser-fixture.ts`](../../scripts/seed-browser-fixture.ts)), so
+    the skipped-removal list never renders. To reach it, hand-edit the stored proposal document to
+    add one `{ kind: "removed", component: "…" }` entry before applying. Otherwise record it as
+    unobserved and say so — do not report it as passing because the code path exists.
+14. **Failed-and-retriable.** The `## What will most likely go wrong` section below is not a
+    substitute for observing this: a refusal is an `AbortTaskRunError` and renders as a refusal
+    message, so the guard misfiring does **not** exercise the failure state. To force it: apply the
+    `browser-fixture-stale` project's `PROPOSED` change, remove `OPENAI_API_KEY` from the
+    **Trigger.dev** environment, restart the worker, and push. The model call fails,
+    `canvasPushedAt` is never written, and the control must return to offering the push rather than
+    latching disabled — that is the retry property `verify:canvas -- retry` proves in the database,
+    finally seen in the UI. Put the key back afterwards.
 
 ## What will most likely go wrong
 
@@ -126,9 +147,16 @@ Written down so it is recognised rather than debugged from scratch:
    **quoting the generated spec's sentence** that names the change's component. Move the items it
    proved out of that file's `## Not Verified` list.
 2. Update unit 43's row in [`../progress-tracker.md`](../progress-tracker.md): `structural` →
-   `partial` (or `browser` if Part 4 item 13 was covered too).
+   **`partial`**, and name in the row which checks are now browser-backed. **Not `browser`**,
+   however completely the pass goes — the HTTP layer and the collaborator path stay unexercised
+   either way, and `partial` is defined as "some checks browser-verified, the file says which",
+   which is exactly the state this leaves 43 in.
 3. In the tracker's open questions, the canvas write-back entry currently says the end-to-end
    check "has never been run". Replace that paragraph with the result.
 4. If the safety property in Part 2 fails, **stop and treat it as a defect, not a QA note.** It is
    the one outcome that makes the unit worse than not having shipped.
-5. Delete this plan and its row in [`README.md`](README.md).
+5. Delete this plan and its row in [`README.md`](README.md) — then file, in its place, the one gap
+   this pass could not close and no other plan owns: a **`verify:canvas-http`** script, the
+   counterpart to `verify:apply-http`, covering `POST /api/ai/canvas`'s two 409s, its 404 masking,
+   and its signed-out and non-member paths. Running this pass is what makes that the next thing 43
+   needs; leaving the folder empty would say 43 is finished, and it is not.

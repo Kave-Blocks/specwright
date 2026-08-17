@@ -98,6 +98,22 @@ export interface SpecDrift {
    * when the project has no spec at all.
    */
   appliedSinceCurrentSpec: number;
+  /**
+   * How many of those have **not** reached the canvas yet (`43`).
+   *
+   * Always `≤ appliedSinceCurrentSpec`, and it deliberately does not change what
+   * that number means: drift is still measured from spec versions, and pushing
+   * to the canvas does not clear it. Only generating a spec does, and that is
+   * correct — the spec really is still behind until it is rewritten.
+   *
+   * What this second number decides is whether regenerating would *help*. A
+   * spec is written from the canvas, so while any of these changes is unpushed,
+   * a new spec would miss it and reset the drift count to zero — the one
+   * reading that leaves somebody worse off than no notice at all. At zero,
+   * regenerating genuinely does bring the spec up to date, and the notice may
+   * finally say so.
+   */
+  unpushedSinceCurrentSpec: number;
   /** The version the count is measured against, or `null` with no specs. */
   currentSpecVersion: number | null;
 }
@@ -126,7 +142,11 @@ export async function countAppliedChangesSinceCurrentSpec(
 ): Promise<SpecDrift> {
   const currentSpecVersion = await currentSpecVersionOf(projectId);
   if (currentSpecVersion === null) {
-    return { appliedSinceCurrentSpec: 0, currentSpecVersion: null };
+    return {
+      appliedSinceCurrentSpec: 0,
+      unpushedSinceCurrentSpec: 0,
+      currentSpecVersion: null,
+    };
   }
 
   // Filtered through the relation rather than by `baseSpecId`: the question is
@@ -134,13 +154,23 @@ export async function countAppliedChangesSinceCurrentSpec(
   // version first would be a second query to say the same thing. Discarded and
   // proposed changes are excluded by the status — neither has touched the build
   // list, so neither can have put the spec behind.
-  const appliedSinceCurrentSpec = await prisma.projectChange.count({
-    where: {
-      projectId,
-      status: ChangeStatus.APPLIED,
-      baseSpec: { version: currentSpecVersion },
-    },
-  });
+  const drifted = {
+    projectId,
+    status: ChangeStatus.APPLIED,
+    baseSpec: { version: currentSpecVersion },
+  };
 
-  return { appliedSinceCurrentSpec, currentSpecVersion };
+  // The second count is the first one narrowed by `canvasPushedAt: null`, so
+  // the two cannot describe different sets — and they run together rather than
+  // in sequence, since neither depends on the other's answer.
+  const [appliedSinceCurrentSpec, unpushedSinceCurrentSpec] = await Promise.all([
+    prisma.projectChange.count({ where: drifted }),
+    prisma.projectChange.count({ where: { ...drifted, canvasPushedAt: null } }),
+  ]);
+
+  return {
+    appliedSinceCurrentSpec,
+    unpushedSinceCurrentSpec,
+    currentSpecVersion,
+  };
 }

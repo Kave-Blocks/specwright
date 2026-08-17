@@ -14,6 +14,7 @@
     "verify:apply": "tsx scripts/verify-change-application.ts",
     "verify:apply-http": "tsx scripts/verify-change-application-http.ts",
     "verify:drift": "tsx scripts/verify-spec-drift.ts",
+    "verify:canvas": "tsx scripts/verify-canvas-write-back.ts",
     "trigger:dev": "trigger dev",
     "trigger:deploy": "trigger deploy"
   },

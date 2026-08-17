@@ -38,6 +38,9 @@ export const GET = withProjectMember<{ projectId: string }>(
         request: true,
         status: true,
         createdAt: true,
+        // Read to answer "may this be pushed to the canvas", and collapsed to a
+        // boolean below — the timestamp itself is never sent.
+        canvasPushedAt: true,
         // The join the client needs to say what the proposal was reasoned
         // against. The relation is required, so `baseSpec` is never null.
         baseSpec: { select: { version: true } },
@@ -52,6 +55,7 @@ export const GET = withProjectMember<{ projectId: string }>(
       // place either direction of that translation happens.
       status: changeStatusToWire(row.status),
       baseSpecVersion: row.baseSpec.version,
+      canvasPushed: row.canvasPushedAt !== null,
       createdAt: row.createdAt.toISOString(),
     }));
 

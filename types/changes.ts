@@ -55,6 +55,16 @@ export interface ChangeSummary {
   status: ChangeStatusValue
   /** Version of the spec the proposal was reasoned against. */
   baseSpecVersion: number
+  /**
+   * Whether this change's architecture delta has been drawn on the canvas.
+   *
+   * A **boolean, not the `canvasPushedAt` timestamp it derives from**: what the
+   * client renders is whether a control is available, not a date, and `39`'s
+   * discipline is to send only what the client renders — the same reason
+   * `filePath` stays off `ProjectSpecSummary` and `specId` off
+   * `BuildUnitSummary`. Nothing on any surface says *when* a change was pushed.
+   */
+  canvasPushed: boolean
   /** ISO-8601 — `Date` does not survive JSON. */
   createdAt: string
 }
@@ -134,6 +144,43 @@ export interface ChangeApplyResponse {
   created: BuildUnitSummary[]
   supersededUnitIds: string[]
   skippedTitles: string[]
+}
+
+/**
+ * What a canvas write-back actually did, returned as the `canvas-sync` run's
+ * output and rendered by the Changes view.
+ *
+ * It reports what **landed**, exactly as `ChangeApplyResponse` does and for the
+ * same reason: the plan the model returned and the plan that was applied are not
+ * the same list, so echoing the proposal back would overstate the canvas.
+ *
+ * The counts are additive only. There is no `nodesRemoved` or `edgesRemoved`
+ * field to report, because {@link filterAdditivePlan} removes every destructive
+ * operation before anything is applied — the absence of those two numbers is
+ * itself the contract.
+ */
+export interface ChangeCanvasPushOutcome {
+  nodesAdded: number
+  nodesUpdated: number
+  edgesAdded: number
+  /**
+   * Components in the delta's `removed` group, which are **reported and never
+   * drawn**.
+   *
+   * A person is told rather than left to notice: a canvas that silently kept a
+   * retired component overstates the system. The reasoning for not drawing them
+   * — no honest "retired" tone in this palette, and deleting the node is the
+   * visual form of the rewrite `41` exists to prevent — is in
+   * `lib/canvas-sync/plan.ts`.
+   */
+  skippedRemovals: string[]
+  /**
+   * Destructive operations the filter dropped before anything reached the
+   * canvas. Normally `0`; a non-zero value means the model asked to delete,
+   * move, or resize somebody's work and was stopped in code rather than by the
+   * prompt.
+   */
+  droppedOperations: number
 }
 
 /**

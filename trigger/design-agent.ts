@@ -7,9 +7,16 @@ import {
 } from "@/lib/ai-errors";
 import { applyDesignPlan, type AppliedSummary } from "@/lib/design-agent/apply";
 import { generateDesignPlan } from "@/lib/design-agent/plan";
+import {
+  AI_CURSOR,
+  PRESENCE_TTL,
+  announceAiStatus,
+  clearAiPresence,
+  setAiPresence,
+} from "@/lib/design-agent/room";
 import { ensureAiStatusFeed, getLiveblocks } from "@/lib/liveblocks";
 import type { CanvasEdge, CanvasNode, CanvasSnapshot } from "@/types/canvas";
-import { AI_STATUS_FEED_ID, type AiStatusPhase } from "@/types/tasks";
+import type { AiStatusPhase } from "@/types/tasks";
 
 /** Payload the design route hands to the background task. */
 export interface DesignAgentPayload {
@@ -17,24 +24,16 @@ export interface DesignAgentPayload {
   roomId: string;
 }
 
-/** The AI participant's stable identity in the room (not a real Clerk user). */
-const AI_USER_ID = "ghost-ai";
-const AI_NAME = "Specwright";
-/** The AI accent (`--accent-ai` from `ui-context.md`) tints the AI cursor/avatar. */
-const AI_COLOR = "#6457f9";
-/** Where the AI cursor hovers while it works, in canvas coordinates. */
-const AI_CURSOR = { x: 100, y: 20 } as const;
-/** Presence TTL while the task runs (seconds); refreshed before the slow model call. */
-const PRESENCE_TTL = 180;
-/** Short TTL used when clearing presence, so the AI disappears promptly on finish. */
-const CLEAR_TTL = 3;
+/** Names this task in the shared room helpers' log lines. */
+const LABEL = "design-agent";
 
 type Liveblocks = ReturnType<typeof getLiveblocks>;
 
 /**
- * Publish an AI status message to the shared `ai-status-feed` feed every
- * participant sees. Best-effort: status is non-critical, so a feed hiccup is
- * logged and swallowed rather than failing (or retrying) the whole generation.
+ * Publish to the shared `ai-status-feed`. A thin binding of this task's label
+ * onto {@link announceAiStatus}, which every canvas-mutating task shares — unit
+ * `43` added the second one, so the AI's identity and voice moved to
+ * `lib/design-agent/room.ts` rather than being written twice.
  */
 async function announce(
   liveblocks: Liveblocks,
@@ -42,57 +41,7 @@ async function announce(
   phase: AiStatusPhase,
   text: string,
 ): Promise<void> {
-  try {
-    await liveblocks.createFeedMessage({
-      roomId,
-      feedId: AI_STATUS_FEED_ID,
-      data: { phase, text },
-    });
-  } catch (error) {
-    logger.warn("design-agent failed to publish status", {
-      roomId,
-      phase,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-}
-
-/** Set the AI's ephemeral presence (cursor + thinking) in the room. */
-async function setAiPresence(
-  liveblocks: Liveblocks,
-  roomId: string,
-  data: { cursor: { x: number; y: number } | null; thinking: boolean },
-  ttl: number,
-): Promise<void> {
-  await liveblocks.setPresence(roomId, {
-    userId: AI_USER_ID,
-    // `selection` completes the room's `Presence` shape (see liveblocks.config.ts).
-    // The AI never selects anything — it writes the whole graph — so it is always
-    // null, but sending it keeps every participant's presence the same shape.
-    data: { ...data, selection: null },
-    userInfo: { name: AI_NAME, avatar: "", color: AI_COLOR },
-    ttl,
-  });
-}
-
-/** Best-effort presence clear — never throws, so it is safe in `finally`. */
-async function clearAiPresence(
-  liveblocks: Liveblocks,
-  roomId: string,
-): Promise<void> {
-  try {
-    await setAiPresence(
-      liveblocks,
-      roomId,
-      { cursor: null, thinking: false },
-      CLEAR_TTL,
-    );
-  } catch (error) {
-    logger.warn("design-agent failed to clear AI presence", {
-      roomId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
+  await announceAiStatus(liveblocks, roomId, phase, text, LABEL);
 }
 
 /** Turn an applied-plan tally into a human status line. */
@@ -250,7 +199,7 @@ export const designAgent = task({
       throw error;
     } finally {
       // Always clear AI presence when the task finishes (success or failure).
-      await clearAiPresence(liveblocks, roomId);
+      await clearAiPresence(liveblocks, roomId, LABEL);
     }
   },
 });

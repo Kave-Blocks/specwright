@@ -40,6 +40,18 @@ export type ProposeChangeResult =
   | { ok: false; error: string }
 
 /**
+ * What `pushToCanvas` reports back.
+ *
+ * The same shape as `propose`, and for the same reason: it starts a durable run
+ * rather than completing a write, so what comes back is a handle to track, not
+ * an outcome. The outcome arrives on the run itself once the canvas has been
+ * mutated.
+ */
+export type PushToCanvasResult =
+  | { ok: true; run: ChangeRunHandle }
+  | { ok: false; error: string }
+
+/**
  * What `apply` reports back.
  *
  * A **stale** refusal is its own member rather than a message, because it is the
@@ -88,12 +100,30 @@ export interface UseProjectChangesResult {
     changeId: string,
     options?: { acknowledgedSpecVersion?: number },
   ) => Promise<ApplyChangeResult>
+  /**
+   * Push an applied change's architecture delta onto the canvas. Starts a
+   * durable run and returns its handle; the canvas is mutated by the run, so
+   * nothing is applied locally here — the caller calls {@link markPushed} once
+   * the run completes.
+   */
+  pushToCanvas: (changeId: string) => Promise<PushToCanvasResult>
+  /**
+   * Record that a change reached the canvas, so its row stops offering the
+   * control.
+   *
+   * Separate from `pushToCanvas` because the write it reflects happens *inside
+   * the run*, not in the request that started it — the same reason `propose`
+   * adds nothing to the list and the caller refreshes on completion. Applied
+   * locally rather than by refetching, which would blank the list mid-read.
+   */
+  markPushed: (changeId: string) => void
 }
 
 const LOAD_ERROR = "Couldn’t load your changes. Please try again."
 const PROPOSE_ERROR = "Couldn’t start that change proposal. Please try again."
 const DISCARD_ERROR = "Couldn’t discard that change. Please try again."
 const APPLY_ERROR = "Couldn’t apply that change. Please try again."
+const PUSH_ERROR = "Couldn’t start that canvas update. Please try again."
 
 /**
  * Read the actionable message off a failed response.
@@ -333,9 +363,100 @@ export function useProjectChanges(projectId: string): UseProjectChangesResult {
     [projectId]
   )
 
+  /**
+   * Start a canvas write-back for an applied change.
+   *
+   * Sends only the two ids. The room is **not** sent: one Liveblocks room per
+   * project and the room id *is* the project id, so the route resolves it from
+   * the access check rather than taking a client's word for which shared
+   * document to mutate.
+   */
+  const pushToCanvas = useCallback(
+    async (changeId: string): Promise<PushToCanvasResult> => {
+      try {
+        const response = await fetch("/api/ai/canvas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ projectId, changeId }),
+        })
+        if (!response.ok) {
+          // The 409s name which state refused — not applied, or already
+          // pushed — and a generic fallback would throw that away.
+          return {
+            ok: false,
+            error: await readErrorMessage(response, PUSH_ERROR),
+          }
+        }
+
+        const { runId, publicToken } = (await response.json()) as {
+          runId?: string
+          publicToken?: string
+        }
+        if (!runId) {
+          throw new Error("Canvas push response is missing the run id")
+        }
+
+        // The trigger route hands back a token already scoped to this run, so
+        // the common path mints nothing; the token route is the fallback for a
+        // response that carried only the id.
+        if (publicToken) {
+          return { ok: true, run: { runId, token: publicToken } }
+        }
+
+        const tokenResponse = await fetch("/api/ai/canvas/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ runId }),
+        })
+        if (!tokenResponse.ok) {
+          throw new Error(`Canvas token failed (${tokenResponse.status})`)
+        }
+
+        const { token } = (await tokenResponse.json()) as { token?: string }
+        if (!token) {
+          throw new Error("Canvas token response is missing the token")
+        }
+
+        return { ok: true, run: { runId, token } }
+      } catch (pushError) {
+        console.error(pushError)
+        return { ok: false, error: PUSH_ERROR }
+      }
+    },
+    [projectId]
+  )
+
+  const markPushed = useCallback((changeId: string) => {
+    setChanges((current) =>
+      current.map((change) =>
+        change.id === changeId ? { ...change, canvasPushed: true } : change
+      )
+    )
+  }, [])
+
   return useMemo(
-    () => ({ changes, isLoading, error, refresh, propose, discard, apply }),
-    [changes, isLoading, error, refresh, propose, discard, apply]
+    () => ({
+      changes,
+      isLoading,
+      error,
+      refresh,
+      propose,
+      discard,
+      apply,
+      pushToCanvas,
+      markPushed,
+    }),
+    [
+      changes,
+      isLoading,
+      error,
+      refresh,
+      propose,
+      discard,
+      apply,
+      pushToCanvas,
+      markPushed,
+    ]
   )
 }
 

@@ -71,6 +71,7 @@ export function SpecsView({ projectId }: { projectId: string }) {
   const {
     specs,
     appliedSinceCurrentSpec,
+    unpushedSinceCurrentSpec,
     currentSpecVersion,
     isLoading,
     error: listError,
@@ -92,6 +93,7 @@ export function SpecsView({ projectId }: { projectId: string }) {
           <GenerateSpecButton projectId={projectId} onGenerated={refresh} />
           <SpecDriftNotice
             count={appliedSinceCurrentSpec}
+            unpushed={unpushedSinceCurrentSpec}
             currentVersion={currentSpecVersion}
           />
         </div>
@@ -178,20 +180,30 @@ export function SpecsView({ projectId }: { projectId: string }) {
  * applied to the source-spec badge — so there is no "spec is current" banner to
  * read past on every visit. It deliberately adds **no second generate button**.
  *
- * **It does not promise that regenerating fixes this, because it would not.**
- * `lib/spec-agent/generate.ts` writes a spec from the canvas graph, the
- * conversation, and the brief — never from the build list — and `41` applies a
- * change without touching the canvas. So a spec generated right now would miss
- * the applied work exactly as this one does, while the count reset to zero,
- * which is the one reading that would leave somebody worse off than no notice
- * at all. Until an applied change reaches the canvas, the honest instruction is
- * to put it there first.
+ * **It has two states, and collapsing them would recreate the failure `42`
+ * recorded.** A spec is written from the canvas graph, the conversation, and
+ * the brief — never from the build list (`lib/spec-agent/generate.ts`) — and
+ * applying a change does not touch the canvas. So while any applied change is
+ * still unpushed, regenerating produces a spec that misses that work *and*
+ * resets the count to zero, because the count derives from spec versions and any
+ * new version clears it. The indicator would then read "resolved" over a spec
+ * that resolved nothing, which is the one reading that leaves somebody worse off
+ * than no notice at all. In that state the notice names the step that comes
+ * first: push the changes.
+ *
+ * Once every applied change since this version has reached the canvas, `43`'s
+ * write-back has made the promise true, and the notice may finally say what
+ * `42`'s spec originally wanted it to — that regenerating now brings the spec up
+ * to date. It still adds **no second generate button**; it explains why the one
+ * above it is worth pressing.
  */
 function SpecDriftNotice({
   count,
+  unpushed,
   currentVersion,
 }: {
   count: number
+  unpushed: number
   currentVersion: number | null
 }) {
   // `currentVersion` is never null while the count is above zero — a project
@@ -208,11 +220,23 @@ function SpecDriftNotice({
         {count === 1 ? "1 change" : `${count} changes`} applied since Version{" "}
         {currentVersion}.
       </p>
-      <p className="text-xs text-copy-muted">
-        This spec predates that work. Specs are written from the canvas, and
-        applying a change doesn’t update it — add the change to the canvas
-        first, or a new spec will miss it too.
-      </p>
+      {unpushed > 0 ? (
+        <p className="text-xs text-copy-muted">
+          {unpushed === count
+            ? count === 1
+              ? "It hasn’t reached the canvas yet"
+              : "None of them have reached the canvas yet"
+            : `${unpushed} of them ${unpushed === 1 ? "hasn’t" : "haven’t"} reached the canvas yet`}
+          , and specs are written from the canvas. Add{" "}
+          {unpushed === 1 ? "it" : "them"} from the Changes tab first, or a new
+          spec will miss {unpushed === 1 ? "it" : "them"} too.
+        </p>
+      ) : (
+        <p className="text-xs text-copy-muted">
+          {count === 1 ? "It’s" : "They’re"} on the canvas, so generating a new
+          spec now will describe {count === 1 ? "it" : "them"}.
+        </p>
+      )}
     </div>
   )
 }

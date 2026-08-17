@@ -55,6 +55,7 @@ export const GET = withProjectMember<{ projectId: string }>(
     const body: ProjectSpecListResponse = {
       specs,
       appliedSinceCurrentSpec: drift.appliedSinceCurrentSpec,
+      unpushedSinceCurrentSpec: drift.unpushedSinceCurrentSpec,
       currentSpecVersion: drift.currentSpecVersion,
     };
 

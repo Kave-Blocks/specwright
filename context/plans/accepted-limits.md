@@ -4,10 +4,10 @@
 **Blocked on:** conditions outside the project's control
 **Effort:** read once
 
-Three checks across units 37, 40, and 41 are unproven and will stay that way. Each is recorded
-honestly in its own progress file, which means each looks like an outstanding task to anyone
-skimming. They are not. This file states the decision so the next sweep does not spend an hour
-rediscovering why they are open.
+Four items across units 37, 40, 41, and 43 are unproven or deliberately unfixed, and will stay
+that way. Each is recorded honestly in its own progress file, which means each looks like an
+outstanding task to anyone skimming. They are not. This file states the decision so the next
+sweep does not spend an hour rediscovering why they are open.
 
 **None of these blocks a unit from shipping.** They are recorded in `## Not Verified` sections
 precisely so the `Verified` column stays honest — that is the system working, not failing.
@@ -85,6 +85,33 @@ statement is that the code is inside one transaction — which is inspectable �
 every crash point was tested.
 
 ---
+
+---
+
+## 4. Two simultaneous pushes of the same change
+
+**Unit:** 43 · **Recorded in:** `context/progress/43-canvas-write-back.md`
+
+`ProjectChange.canvasPushedAt` is written **only after the room mutation succeeds**. Two members
+pressing "Add to canvas" on the same change at the same instant can therefore both pass
+`loadPushableChange` and both draw the delta, producing duplicate nodes.
+
+**Why it stays open:** the ordering is not an oversight, it is the requirement. `null` doubles as
+the retry state, so a push that fails partway leaves the change pushable again. Claiming the push
+*before* mutating would close the race by trading a rare duplicate for a routine unrecoverable
+one — a crash after the claim would mark a change drawn that was never drawn, and nothing could
+ever push it again. A CRDT write and a Postgres write cannot be made atomic with each other, so
+one of the two failure modes has to be chosen.
+
+**What is proven instead:** `verify:canvas -- guard` asserts the sequential case — a second push
+is refused, and marking twice does not move the recorded time. The route's pre-check and the
+task's re-check narrow the window to roughly the length of one model call.
+
+**If you ever want it closed:** the honest route is not a lock but a **reconciliation** — make the
+push idempotent by deriving each node's id deterministically from the change id and the component
+name, so drawing the same delta twice overwrites rather than duplicates. That is a real design
+change to `lib/canvas-sync/plan.ts`'s id handling, and worth it only if duplicates are ever
+actually seen. Do not reach for a claim-then-draw ordering; it is the worse trade.
 
 ## Related but genuinely open
 

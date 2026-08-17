@@ -60,6 +60,9 @@ export const GET = withProjectMember<{
       request: true,
       status: true,
       createdAt: true,
+      // Read to answer "may this be pushed to the canvas", and collapsed to a
+      // boolean below — the timestamp itself is never sent.
+      canvasPushedAt: true,
       // Read to dereference the blob, and deliberately dropped before the
       // response is built.
       proposalPath: true,
@@ -85,6 +88,7 @@ export const GET = withProjectMember<{
     request: change.request,
     status: changeStatusToWire(change.status),
     baseSpecVersion: change.baseSpec.version,
+    canvasPushed: change.canvasPushedAt !== null,
     createdAt: change.createdAt.toISOString(),
   };
 

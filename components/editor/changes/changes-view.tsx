@@ -17,6 +17,7 @@ import {
   Loader2,
   Sparkles,
   Trash2,
+  Waypoints,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -27,15 +28,18 @@ import {
   type ChangeActionResult,
   type ChangeRunHandle,
   type ProposeChangeResult,
+  type PushToCanvasResult,
 } from "@/hooks/use-project-changes"
 import { isFinishedRunStatus } from "@/lib/trigger-run"
 import { cn } from "@/lib/utils"
+import type { canvasSync } from "@/trigger/canvas-sync"
 import type { proposeChange } from "@/trigger/propose-change"
 import {
   CHANGE_DELTA_KIND_ORDER,
   CHANGE_STATUS_DISPLAY,
   changeDeltaKindLabel,
   type ChangeApplyResponse,
+  type ChangeCanvasPushOutcome,
   type ChangeDeltaEntry,
   type ChangeDisplayEntry,
   type ChangeProposal,
@@ -81,6 +85,9 @@ const CHIP_IDLE =
 /** Shown when a proposal run failed without publishing a message of its own. */
 const RUN_FAILED_ERROR =
   "Specwright couldn’t finish the change proposal. Please try again."
+/** Shown when a canvas push run failed without reporting a reason of its own. */
+const PUSH_FAILED_ERROR =
+  "Specwright couldn’t add this change to the canvas. Please try again."
 /** Shown when a stored proposal document could not be read back. */
 const PROPOSAL_ERROR = "Couldn’t load this proposal. Please try again."
 /** Status line while a run is in flight but has published nothing yet. */
@@ -122,6 +129,8 @@ export function ChangesView({ projectId }: ChangesViewProps) {
     propose,
     discard,
     apply,
+    pushToCanvas,
+    markPushed,
   } = useProjectChanges(projectId)
 
   /** The single open row, if any — this is an accordion, not a tree. */
@@ -219,6 +228,8 @@ export function ChangesView({ projectId }: ChangesViewProps) {
                     onToggleExpand={() => toggleExpand(change.id)}
                     onDiscard={() => discard(change.id)}
                     onApply={(options) => apply(change.id, options)}
+                    onPushToCanvas={() => pushToCanvas(change.id)}
+                    onPushed={() => markPushed(change.id)}
                   />
                 ))}
               </ul>
@@ -485,6 +496,8 @@ function ChangeRow({
   onToggleExpand,
   onDiscard,
   onApply,
+  onPushToCanvas,
+  onPushed,
 }: {
   projectId: string
   change: ChangeSummary
@@ -494,6 +507,8 @@ function ChangeRow({
   onApply: (options?: {
     acknowledgedSpecVersion?: number
   }) => Promise<ApplyChangeResult>
+  onPushToCanvas: () => Promise<PushToCanvasResult>
+  onPushed: () => void
 }) {
   const [discarding, setDiscarding] = useState(false)
   const [applying, setApplying] = useState(false)
@@ -715,17 +730,39 @@ function ChangeRow({
               </Button>
             </div>
           ) : (
-            /* An applied or discarded change is settled: it reports its outcome
-             * and offers no action. Applied is not reversible from here — the
-             * units it created exist and the units it superseded are marked, so
-             * discarding it afterwards would claim a decision was rejected while
-             * its effects stand. The endpoint refuses it too; this is not the
-             * only guard. */
-            <p className="border-t border-surface-border pt-3 text-xs text-copy-muted">
-              {change.status === "applied"
-                ? "This change has been applied to the build list."
-                : "This change was discarded."}
-            </p>
+            /* An applied or discarded change is settled as far as the build
+             * list goes: neither is reversible from here. Applied in particular
+             * is not — the units it created exist and the units it superseded
+             * are marked, so discarding it afterwards would claim a decision was
+             * rejected while its effects stand. The endpoint refuses it too;
+             * this is not the only guard.
+             *
+             * An applied change still has one step left, and it is the step
+             * that keeps the project honest: its delta has to reach the canvas,
+             * because the canvas is what a spec is written from. That control
+             * lives here rather than beside Apply because pushing is the
+             * *follow-on*, and because this is also where a change applied
+             * before `43` shipped is found — otherwise those would be stranded
+             * with no way to reach the canvas at all. */
+            <div className="space-y-3 border-t border-surface-border pt-3">
+              {/* Suppressed right after an apply, where the outcome above has
+                * already said it in more detail. */}
+              {!(change.status === "applied" && outcome) && (
+                <p className="text-xs text-copy-muted">
+                  {change.status === "applied"
+                    ? "This change has been applied to the build list."
+                    : "This change was discarded."}
+                </p>
+              )}
+
+              {change.status === "applied" && (
+                <CanvasPushAction
+                  isPushed={change.canvasPushed}
+                  onPush={onPushToCanvas}
+                  onPushed={onPushed}
+                />
+              )}
+            </div>
           )}
 
           {rowError && (
@@ -859,14 +896,268 @@ function ApplyOutcome({ outcome }: { outcome: ChangeApplyResponse }) {
        * happened to create, so a proposal that created nothing still leaves the
        * spec describing a build list that has moved on.
        *
-       * It sends people to the canvas rather than to Generate Spec: a spec is
+       * It still points at the canvas rather than at Generate Spec: a spec is
        * written from the canvas graph, and this apply did not touch it, so
        * regenerating now would produce a spec that misses this change while
-       * clearing the drift count. See `SpecDriftNotice` in specs-view.tsx. */}
+       * clearing the drift count. Since `43` that instruction has a control
+       * under it rather than being manual work — see `CanvasPushAction` below,
+       * and `SpecDriftNotice` in specs-view.tsx for the same two states on the
+       * other surface. */}
       <p className="text-xs text-copy-muted">
-        The spec no longer describes this build list. Specs are written from the
-        canvas, which this didn’t change — add it there before generating a new
-        spec, or the new one will miss it too.
+        The spec no longer describes this build list, and specs are written from
+        the canvas — which this didn’t change.
+      </p>
+    </div>
+  )
+}
+
+/**
+ * Push an applied change's architecture delta onto the canvas, and track the run
+ * that draws it.
+ *
+ * **Secondary treatment, never primary.** `41`'s Apply is the primary action on
+ * this panel and stays so; this is the follow-on step, not a competing one.
+ *
+ * Progress rides on the room's shared `ai-status-feed`, not on this run's
+ * metadata — the canvas is mutating live under everybody's eyes, which is the
+ * design agent's existing behaviour and needs no new affordance here. What this
+ * component tracks is only whether *its own* run has finished, so the control
+ * can re-enable and the outcome can be reported.
+ *
+ * A pushed change offers nothing further. There is no re-push: the delta has
+ * been drawn, and drawing it twice duplicates nodes. The endpoint refuses it as
+ * well, so this is not the only guard.
+ */
+function CanvasPushAction({
+  isPushed,
+  onPush,
+  onPushed,
+}: {
+  isPushed: boolean
+  onPush: () => Promise<PushToCanvasResult>
+  onPushed: () => void
+}) {
+  const [pending, setPending] = useState(false)
+  const [activeRun, setActiveRun] = useState<ChangeRunHandle | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  /** What the push actually drew, once one has succeeded from this panel. */
+  const [outcome, setOutcome] = useState<ChangeCanvasPushOutcome | null>(null)
+  /** Guards the settle, so a run is only ever finished once. */
+  const settledRunRef = useRef<string | null>(null)
+
+  // Keyed by run id so a finished run's cached state can't settle the next one
+  // instantly; idle (and quiet about the absent token) while nothing is running.
+  const { run, error: runError } = useRealtimeRun<typeof canvasSync>(
+    activeRun?.runId,
+    {
+      accessToken: activeRun?.token,
+      enabled: activeRun !== null,
+      id: activeRun?.runId,
+      // The payload is the two ids we just sent — don't ship them back.
+      skipColumns: ["payload"],
+    }
+  )
+
+  const busy = pending || activeRun !== null
+
+  const settle = useCallback(
+    (failed: boolean, failureText: string | null, result: unknown) => {
+      if (failed) {
+        // Prefer the reason the run itself reported. Every refusal this task
+        // raises is written for a person — "already on the canvas", "only an
+        // applied change" — and the generic line would throw that away, which
+        // is the regression `37` fixed on the other AI paths.
+        setError(failureText ?? PUSH_FAILED_ERROR)
+        setActiveRun(null)
+        return
+      }
+
+      // The run's output crosses the network like any other realtime payload,
+      // so its shape is checked rather than trusted.
+      const pushed = readPushOutcome(result)
+      setOutcome(pushed)
+      // The canvas has been written and `canvasPushedAt` recorded by the time
+      // the run completes, so the row stops offering the control from here on.
+      onPushed()
+      setActiveRun(null)
+    },
+    [onPushed]
+  )
+
+  // Close the run out once it finishes. Deliberately not `useRealtimeRun`'s
+  // `onComplete`, which fires at most once per mount — a second push in the
+  // same session would never settle and the control would stay disabled.
+  useEffect(() => {
+    if (!activeRun) return
+    if (settledRunRef.current === activeRun.runId) return
+
+    const isFinished =
+      run?.id === activeRun.runId && isFinishedRunStatus(run.status)
+    // A dropped subscription also ends tracking — otherwise a network blip would
+    // leave the control disabled forever.
+    if (!isFinished && !runError) return
+
+    const runId = activeRun.runId
+    const failed = Boolean(runError) || run?.status !== "COMPLETED"
+    // A dropped subscription publishes nothing trustworthy, so only the run's
+    // own reported failure supplies its message.
+    const failureText = runError ? null : runErrorText(run?.error)
+    const output = run?.output
+
+    // Deferred so the settle never sets state synchronously inside the effect.
+    // The guard is claimed inside the timer, not before it: a later realtime
+    // update would otherwise cancel this timer while the guard already read as
+    // settled, and the run would hang.
+    const timer = setTimeout(() => {
+      settledRunRef.current = runId
+      settle(failed, failureText, output)
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [activeRun, run, runError, settle])
+
+  async function handlePush() {
+    if (busy) return
+
+    setError(null)
+    setPending(true)
+    const result = await onPush()
+    setPending(false)
+
+    if (!result.ok) {
+      setError(result.error)
+      return
+    }
+
+    setActiveRun(result.run)
+  }
+
+  // A push that has just landed reports what it drew. A change pushed in an
+  // earlier session has no outcome to report, so it simply says so.
+  if (outcome) {
+    return <CanvasPushOutcome outcome={outcome} />
+  }
+
+  if (isPushed) {
+    return (
+      <p className="text-xs text-copy-muted">
+        This change is on the canvas. A new spec will describe it.
+      </p>
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-copy-muted">
+        The canvas doesn’t show this change yet, and a spec is written from the
+        canvas. Add it there before generating a new spec.
+      </p>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={() => void handlePush()}
+          disabled={busy}
+        >
+          {busy ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Waypoints className="h-3.5 w-3.5" />
+          )}
+          {busy ? "Adding to canvas…" : "Add to canvas"}
+        </Button>
+
+        {busy && (
+          <p
+            role="status"
+            aria-live="polite"
+            className="min-w-0 truncate text-xs text-copy-muted"
+          >
+            Specwright is drawing this on the canvas.
+          </p>
+        )}
+      </div>
+
+      {/* A failed push leaves the change unpushed, so the control above stays
+        * available — this is a retriable state, not a dead end. */}
+      {error && (
+        <p role="alert" className="flex items-center gap-1.5 text-xs text-error">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+          <span>{error}</span>
+        </p>
+      )}
+    </div>
+  )
+}
+
+/**
+ * What a canvas push actually drew.
+ *
+ * The same neutral well `41`'s apply outcome and `42`'s drift notice both use,
+ * with `role="status"` and never `alert`: **nothing failed here**. A removal
+ * that was not drawn is the designed behaviour, not an error.
+ *
+ * The skipped-removal list is the reason this well exists at all. A removal is
+ * reported and never drawn — there is no honest way to render "retired" in this
+ * palette, and deleting the node is the visual form of the rewrite `41` exists
+ * to prevent — so a person who is not told would assume the canvas is now
+ * complete. It follows the shape of `41`'s skipped-titles list: one line of
+ * explanation, then the component names as items, with no second list treatment
+ * invented for it.
+ */
+function CanvasPushOutcome({
+  outcome,
+}: {
+  outcome: ChangeCanvasPushOutcome
+}) {
+  const drawn = [
+    outcome.nodesAdded > 0
+      ? `${countLabel(outcome.nodesAdded, "node", "nodes")} added`
+      : null,
+    outcome.edgesAdded > 0
+      ? `${countLabel(outcome.edgesAdded, "connection", "connections")} added`
+      : null,
+    outcome.nodesUpdated > 0
+      ? `${countLabel(outcome.nodesUpdated, "node", "nodes")} updated`
+      : null,
+  ].filter((part): part is string => part !== null)
+
+  return (
+    <div
+      role="status"
+      className="space-y-1.5 rounded-xl border border-surface-border bg-base p-3"
+    >
+      <p className="text-xs text-copy-primary">
+        {drawn.length > 0
+          ? `Added to the canvas — ${drawn.join(", ")}.`
+          : "Added to the canvas. Nothing new needed drawing."}
+      </p>
+
+      {outcome.skippedRemovals.length > 0 && (
+        <div className="text-xs text-copy-muted">
+          <p>
+            {countLabel(outcome.skippedRemovals.length, "part", "parts")} of the
+            change retires something, which Specwright doesn’t remove for you —
+            take these off the canvas yourself:
+          </p>
+          <ul className="mt-1 space-y-0.5">
+            {outcome.skippedRemovals.map((component, index) => (
+              <li key={`${component}-${index}`} className="flex gap-2">
+                {/* Decoration, not content — the component name is the item —
+                 * so `text-copy-faint` is licensed here. */}
+                <span aria-hidden className="text-copy-faint">
+                  •
+                </span>
+                <span>{component}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <p className="text-xs text-copy-muted">
+        A new spec generated from the canvas will now describe this change.
       </p>
     </div>
   )
@@ -875,6 +1166,60 @@ function ApplyOutcome({ outcome }: { outcome: ChangeApplyResponse }) {
 /** "1 unit" / "3 units" — plural agreement, in one place. */
 function countLabel(count: number, singular: string, plural: string): string {
   return `${count} ${count === 1 ? singular : plural}`
+}
+
+/**
+ * Read a canvas-push outcome off a completed run's output.
+ *
+ * The output crosses the network exactly as run metadata does, so every field
+ * is checked rather than trusted — the counts are rendered as numbers and the
+ * removals as a list, and an unexpected shape must read as "nothing to report"
+ * rather than as `undefined nodes added`. A run that completed with no usable
+ * output still counts as a success: the canvas was written before the run
+ * finished, and the outcome is a report about it, not the proof of it.
+ */
+function readPushOutcome(output: unknown): ChangeCanvasPushOutcome {
+  const empty: ChangeCanvasPushOutcome = {
+    nodesAdded: 0,
+    nodesUpdated: 0,
+    edgesAdded: 0,
+    skippedRemovals: [],
+    droppedOperations: 0,
+  }
+
+  if (typeof output !== "object" || output === null) return empty
+
+  const record = output as Record<string, unknown>
+  const count = (value: unknown): number =>
+    typeof value === "number" && Number.isFinite(value) ? value : 0
+
+  return {
+    nodesAdded: count(record.nodesAdded),
+    nodesUpdated: count(record.nodesUpdated),
+    edgesAdded: count(record.edgesAdded),
+    skippedRemovals: Array.isArray(record.skippedRemovals)
+      ? record.skippedRemovals.filter(
+          (entry): entry is string => typeof entry === "string"
+        )
+      : [],
+    droppedOperations: count(record.droppedOperations),
+  }
+}
+
+/**
+ * The message a failed run reported, or `null` when it reported none worth
+ * showing — in which case the caller falls back to {@link PUSH_FAILED_ERROR}.
+ *
+ * Read off the run's `error` rather than its metadata, because this task
+ * publishes its progress to the room's shared feed rather than onto the run.
+ * Its refusals are `AbortTaskRunError`s whose messages are written for a person,
+ * so showing them is what makes "already on the canvas" say that instead of
+ * "please try again", which cannot work.
+ */
+function runErrorText(error: unknown): string | null {
+  if (typeof error !== "object" || error === null) return null
+  const message = (error as { message?: unknown }).message
+  return typeof message === "string" && message.length > 0 ? message : null
 }
 
 /** The proposal document itself, once it has been read back. */

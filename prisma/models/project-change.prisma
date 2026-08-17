@@ -50,6 +50,23 @@ model ProjectChange {
   proposalPath String?
   /// Clerk user id of the member who asked for the change.
   authorId  String
+  /// **When this change's architecture delta was written onto the canvas**, and
+  /// nothing else records it.
+  ///
+  /// This is the deliberate opposite of the call `42` made. Spec drift got no
+  /// column because `baseSpecId` and the spec versions already implied it — two
+  /// numbers that were true whether or not anything stored the conclusion. A
+  /// canvas push implies nothing: the canvas is a CRDT document with no memory
+  /// of which change produced which node, so after a push there is no pair of
+  /// existing values that says one happened. `39`'s rule decides both cases the
+  /// same way — *record a fact already true, not one that anticipates a
+  /// relationship* — and a push is an event that happened.
+  ///
+  /// `null` means "not pushed", which is also the retry state: a push that
+  /// failed halfway leaves it null and the control stays available. It is set
+  /// only after the room mutation succeeds, because a CRDT write is not
+  /// transactional with Postgres.
+  canvasPushedAt DateTime?
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 

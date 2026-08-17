@@ -15,6 +15,11 @@ export interface UseProjectSpecsResult {
    * finishes, so generating a spec clears the drift with no second mechanism.
    */
   appliedSinceCurrentSpec: number
+  /**
+   * How many of those have not reached the canvas yet — which of the two the
+   * drift notice may say, since a spec is written from the canvas.
+   */
+  unpushedSinceCurrentSpec: number
   /** The version the count is measured against, or `null` with no specs. */
   currentSpecVersion: number | null
   /** True while the list is being fetched (including a refresh). */
@@ -30,7 +35,9 @@ const LOAD_ERROR = "Couldn’t load your specs. Please try again."
 /** The drift half of the response, held together so the two never disagree. */
 type SpecDriftState = Pick<
   UseProjectSpecsResult,
-  "appliedSinceCurrentSpec" | "currentSpecVersion"
+  | "appliedSinceCurrentSpec"
+  | "unpushedSinceCurrentSpec"
+  | "currentSpecVersion"
 >
 
 /**
@@ -40,6 +47,7 @@ type SpecDriftState = Pick<
  */
 const NO_DRIFT: SpecDriftState = {
   appliedSinceCurrentSpec: 0,
+  unpushedSinceCurrentSpec: 0,
   currentSpecVersion: null,
 }
 
@@ -85,16 +93,22 @@ export function useProjectSpecs(projectId: string): UseProjectSpecsResult {
         const {
           specs: loaded,
           appliedSinceCurrentSpec,
+          unpushedSinceCurrentSpec,
           currentSpecVersion,
         } = (await response.json()) as ProjectSpecListResponse
 
         if (requestRef.current !== requestId) return
         setSpecs(loaded ?? [])
-        // Defaulted rather than trusted: the two fields cross the network, and
+        // Defaulted rather than trusted: the three fields cross the network, and
         // a response that predates them would otherwise render `undefined`
-        // changes since version `undefined`.
+        // changes since version `undefined`. `unpushedSinceCurrentSpec` defaults
+        // to **zero pushed**, i.e. all of them unpushed, so a response that has
+        // not heard of `43` yet gets the cautious notice rather than the one
+        // that says regenerating is safe.
         setDrift({
           appliedSinceCurrentSpec: appliedSinceCurrentSpec ?? 0,
+          unpushedSinceCurrentSpec:
+            unpushedSinceCurrentSpec ?? appliedSinceCurrentSpec ?? 0,
           currentSpecVersion: currentSpecVersion ?? null,
         })
         setError(null)

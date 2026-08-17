@@ -46,6 +46,17 @@ export interface ProjectSpecListResponse {
    */
   appliedSinceCurrentSpec: number
   /**
+   * How many of those have not been pushed to the canvas yet (`43`).
+   *
+   * This is what decides which of the drift notice's two states is honest.
+   * Above zero, regenerating would produce a spec that still misses the applied
+   * work *while clearing the count*; at zero, regenerating genuinely brings the
+   * spec up to date. It does **not** change what `appliedSinceCurrentSpec`
+   * means — pushing to the canvas never clears drift, only generating a spec
+   * does. See `countAppliedChangesSinceCurrentSpec` in `lib/changes.ts`.
+   */
+  unpushedSinceCurrentSpec: number
+  /**
    * The version the count is measured against, or `null` with no specs.
    *
    * A plain number, like `ProjectSpecSummary.version` — no spec id and no

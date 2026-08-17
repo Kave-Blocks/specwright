@@ -9,6 +9,7 @@
       "Bash(npm run verify:drift)",
       "Bash(npm run verify:canvas)",
       "Bash(npm run verify:design-room)",
+      "Bash(npm run verify:units)",
       "Bash(npm run verify:db)",
       "Bash(npm run verify:http)",
       "Bash(npm run verify:all)"

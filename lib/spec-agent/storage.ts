@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { put } from "@vercel/blob";
+import { get, put } from "@vercel/blob";
 
 import { prisma } from "@/lib/prisma";
 
@@ -101,4 +101,28 @@ export async function saveProjectSpec({
       select: { id: true, version: true, filePath: true },
     });
   });
+}
+
+/**
+ * Read a stored spec's Markdown back out of Blob.
+ *
+ * A private blob URL is not publicly fetchable — the SDK attaches the auth
+ * token — and `useCache: false` matches every other read in the app: always the
+ * stored bytes. A failure **throws** rather than degrading to an empty string:
+ * both callers reason *against* the spec, and reasoning against nothing is not
+ * a weaker answer, it is a wrong one. A change is a delta against a base; a
+ * derived build list is the spec's own contents restated as work.
+ *
+ * It lives here, beside `saveProjectSpec`, because two modules read it — the
+ * change path (`lib/change-agent/propose.ts`, where it started, private) and
+ * the unit derivation path (`lib/unit-agent/derive.ts`, unit `44`). Two readers
+ * of one artifact is how two different policies for an unreadable spec come to
+ * exist.
+ */
+export async function readSpecMarkdown(filePath: string): Promise<string> {
+  const result = await get(filePath, { access: "private", useCache: false });
+  if (!result || result.statusCode !== 200) {
+    throw new Error("The project's spec could not be read");
+  }
+  return await new Response(result.stream).text();
 }

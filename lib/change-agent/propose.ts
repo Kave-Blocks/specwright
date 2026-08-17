@@ -14,6 +14,7 @@ import {
 } from "@/lib/change-agent/payload";
 import type { ChangeProposalDraft } from "@/lib/change-agent/payload";
 import { MAX_EDGES, MAX_NODES } from "@/lib/spec-agent/payload";
+import { readSpecMarkdown } from "@/lib/spec-agent/storage";
 import type { BuildUnitStatusValue } from "@/types/build-units";
 
 /**
@@ -76,22 +77,13 @@ interface CanvasGraphEdge {
   label: string;
 }
 
-/**
- * Read the current spec's Markdown out of Blob.
- *
- * A private blob URL is not publicly fetchable — the SDK attaches the auth
- * token — and `useCache: false` matches every other read in the app: always the
- * stored bytes. A failure here **throws** rather than degrading to an empty
- * base: a change is a delta, and a delta against nothing is not a weaker
- * proposal, it is a wrong one.
+/*
+ * `readSpecMarkdown` used to live here, private to this module. `44` reads the
+ * same bytes to derive a project's first build units, so it moved to
+ * `lib/spec-agent/storage.ts` — beside the function that wrote them — rather
+ * than being written a second time. Two readers of one artifact is how two
+ * different failure policies for an unreadable spec come to exist.
  */
-async function readSpecMarkdown(filePath: string): Promise<string> {
-  const result = await get(filePath, { access: "private", useCache: false });
-  if (!result || result.statusCode !== 200) {
-    throw new Error("The project's current spec could not be read");
-  }
-  return await new Response(result.stream).text();
-}
 
 /**
  * Read the saved canvas graph, reduced to the fields the model reasons about.

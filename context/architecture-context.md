@@ -172,6 +172,21 @@ Applying a change moves the build list; the canvas is what a spec is written fro
 - **Nothing auto-pushes on apply.** The canvas is collaborative, and a click that said "Apply" must not silently rewrite a shared drawing.
 - **Pushing generates no spec**, here or anywhere; that stays behind the existing Generate Spec control. It also does not clear the drift count — see `## Spec Drift`.
 
+## Deriving Build Units From A Spec
+
+`41` made the change path produce build units automatically while the initial path never did — Specwright would generate five units when asked for offline mode, and the original twenty were still typed by hand. Deriving turns a project's current spec into the first set of units it implies, in one explicit action.
+
+- **It is the second implementation of `38`'s producer contract, not a new one.** Match on `key`, add what does not exist, never touch the rest. `lib/unit-agent/produce.ts` follows `lib/changes/apply.ts`'s transaction ordering step for step — reserve the sequence block in one increment of N, read the existing key set under that lock, check the cap against what will *actually* be created after collisions are removed, insert from the front of the block. The one difference is what is missing: `apply.ts` ends by marking its impact set superseded, and this producer has no such step.
+- **It only adds.** Supersession requires a change to point at (`supersededByChangeId`), and a derivation has none, so marking a unit stale is not expressible here at all. A spec that no longer mentions a unit somebody built does not retract it — `41` exists because a record of what was built must survive being replaced.
+- **No column and no migration.** `ProjectBuildUnit.specId` and `BuildUnitSource.SPEC` already existed: the lineage column `39` added, and the enum member that had been reserved for exactly this producer since `38` without anything writing it. This is `39`'s rule reaching the case it was written for — record a fact already true.
+- **A second derivation from the same spec writes nothing, and no column says so.** Every derived key already exists, so every entry is skipped. The idempotency *is* the key collision, which is why there is no `unitsDerivedAt` to keep in sync. Contrast `43`'s `canvasPushedAt`, which had to exist because a CRDT document has no memory of which change produced which node — here the build list is itself the record.
+- **`status`, `verified`, and `sequence` are human-owned, and this is the producer most able to break that.** It writes from model output, so the defaults are set in the producer and nothing the model returns reaches any of the three. An entry with no usable title is dropped through the same `normalizeUnitTitle` a person's typed title passes, and the drops are **counted** — `40`'s rule that a producer discarding model output invisibly turns a prompt problem into a mystery.
+- **Nothing derives automatically when a spec is generated.** It is an explicit action, for the reason `43` gives about not auto-pushing on apply: generating a spec must not silently rewrite a list a team maintains by hand.
+- **The spec is resolved server-side, twice.** `POST /api/ai/units` takes only `roomId`, resolves access from it, and reads the project's current spec id itself; the task then re-reads the current spec and **refuses if it is no longer the one the run was started for**, rather than attributing units to a spec that has since been superseded. Same shape as `41`'s staleness refusal, and the same reason: a delta whose base moved cannot be silently reinterpreted.
+- **A project with no spec is refused before a model call is spent** — 409, `40`'s discipline, re-checked inside the task because the last spec can be removed in between.
+- Progress rides on the **run's own metadata**, not `ai-status-feed`. A build list is "the one project resource with no second layer", so it follows the spec and proposal path rather than the design agent's broadcast path.
+- Its own `UNIT_MODEL`, never `SPEC_MODEL` or `CHANGE_MODEL` — the three are different difficulties and must be raisable independently.
+
 ## Invariants
 
 1. Request handlers do not run long-lived AI work — that belongs in background tasks.

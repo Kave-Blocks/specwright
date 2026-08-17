@@ -1,6 +1,18 @@
 {
   "permissions": {
-    "allow": ["Bash(npm run verify:build-units)"]
+    "allow": [
+      "Bash(npm run verify:build-units)",
+      "Bash(npm run verify:spec-versions)",
+      "Bash(npm run verify:changes)",
+      "Bash(npm run verify:apply)",
+      "Bash(npm run verify:apply-http)",
+      "Bash(npm run verify:drift)",
+      "Bash(npm run verify:canvas)",
+      "Bash(npm run verify:design-room)",
+      "Bash(npm run verify:db)",
+      "Bash(npm run verify:http)",
+      "Bash(npm run verify:all)"
+    ]
   },
   "hooks": {
     "PostToolUse": [

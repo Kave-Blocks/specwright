@@ -68,6 +68,7 @@ the file says which) · `none`.
 | 40 | [change-proposals](progress/40-change-proposals.md) | shipped | browser | Proposals generate and render end-to-end, applying nothing; no-spec refusal at boundary. |
 | 41 | [change-application](progress/41-change-application.md) | shipped | partial | Applying a change creates the new units and marks stale ones superseded **without** rewriting them; 59 library + 36 HTTP checks pass. Browser pass done 2026-08-16: all four badges render at once and the row is not crowded at any width; one real spacing bug found and fixed. Only the collaborator path (needs a second Clerk account) is unproven. |
 | 42 | [spec-drift](progress/42-spec-drift.md) | shipped | partial | Drift counted from existing columns — no migration, no model call; 31 library checks pass. Browser-verified 2026-08-16: absent at zero, singular at one, neutral styling, and both surfaces point at the canvas. The plural at two and the listing route's new fields over real HTTP are still unchecked |
+| 43 | [canvas-write-back](feature-specs/43-canvas-write-back.md) | specced | none | Pushes an applied change onto the canvas through the existing design path, additively — closes the last structurally broken link in the change loop |
 
 ### Other work
 
@@ -94,6 +95,8 @@ Work with no single owning unit — cross-cutting QA passes, branding, layout re
   **Raised to the top of the queue by `42` (2026-08-16), which made the consequence reachable from the UI.** `42`'s spec had both surfaces tell the user that generating a new spec brings it up to date with the build list. That instruction is false in the system as built, and it is the *only* instruction the drift notice could give that leaves someone worse off than no notice at all: pressing Generate produces a spec that still misses the applied work, **and** resets the drift count to zero, because the count derives from spec versions and any new version clears it. The indicator would then read "resolved" over a spec that resolved nothing.
 
   `42` shipped with both surfaces pointing at the **canvas** instead, and the reasoning recorded in `architecture-context.md` under `## Spec Drift` and in `ui-context.md` under Specs. That is honest, but it is a workaround: the loop is closed on *reading* the drift and still open on *resolving* it. The next unit is the canvas write-back — after it, and only after it, the notice can safely say "regenerate".
+
+  **Specced 2026-08-17 as unit [`43`](feature-specs/43-canvas-write-back.md).** It pushes an applied change onto the canvas through the existing design path, **additively only** — deletes, moves, and resizes are stripped from the model's plan in code rather than forbidden in the prompt, and `removed` deltas are reported rather than drawn, because no tone in the palette honestly means "retired" and deleting a node is the visual form of the rewrite `41` exists to prevent. Close this question when it ships.
 
 - ~~**OpenAI quota is exhausted (hit 2026-07-29):**~~ — **resolved 2026-08-16.** The account behind `OPENAI_API_KEY` had been returning `429 — "You exceeded your current quota"` (`insufficient_quota`), blocking every AI path. A live `gpt-4o-mini` completion now answers **HTTP 200**, so design generation, spec generation, and change proposals can all run again.
 

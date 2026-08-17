@@ -154,11 +154,10 @@ export function useDesignSubmit(projectId: string): UseDesignSubmitResult {
         const response = await fetch("/api/ai/design", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            prompt: trimmed,
-            roomId: projectId,
-            projectId,
-          }),
+          // No `roomId`: the route derives the room from the project it
+          // access-checked, so sending one would be an ignored (and, before
+          // that route was scoped, forgeable) claim about which room to write.
+          body: JSON.stringify({ prompt: trimmed, projectId }),
         })
         if (!response.ok) {
           throw new Error(`Design request failed (${response.status})`)

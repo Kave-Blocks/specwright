@@ -18,6 +18,16 @@ import type { designAgent } from "@/trigger/design-agent";
  * A project member (owner or collaborator) may generate, mirroring the
  * collaborative canvas: `projectId` arrives in the body (not the path), so the
  * access check runs inline rather than through the `withProjectMember` wrapper.
+ *
+ * The **room id is not accepted from the client.** One Liveblocks room per
+ * project, and the room id *is* the project id, so the room this writes into is
+ * always the one the access check resolved — never a second value the caller
+ * supplied. A route that access-checks one id and acts on another is the bug:
+ * the task mutates the room through the secret-key server client, which no
+ * room-level ACL backstops, and this agent may `deleteNode` (cascading every
+ * attached edge). So an unverified `roomId` here would not be "draw in a
+ * stranger's canvas", it would be "erase it". `TaskRun` records `project.id`
+ * for the same reason — the audit row and the room acted on cannot diverge.
  */
 export const POST = async (request: Request): Promise<NextResponse> => {
   const identity = await getClerkIdentity();
@@ -27,11 +37,10 @@ export const POST = async (request: Request): Promise<NextResponse> => {
 
   const body = await readJsonBody(request);
   const prompt = normalizeName(body.prompt);
-  const roomId = normalizeId(body.roomId);
   const projectId = normalizeId(body.projectId);
-  if (!prompt || !roomId || !projectId) {
+  if (!prompt || !projectId) {
     return NextResponse.json(
-      { error: "prompt, roomId, and projectId are required" },
+      { error: "prompt and projectId are required" },
       { status: 400 },
     );
   }
@@ -43,13 +52,14 @@ export const POST = async (request: Request): Promise<NextResponse> => {
 
   const handle = await tasks.trigger<typeof designAgent>("design-agent", {
     prompt,
-    roomId,
+    // Resolved here, not accepted — see the note above.
+    roomId: project.id,
   });
 
   await prisma.taskRun.create({
     data: {
       runId: handle.id,
-      projectId,
+      projectId: project.id,
       userId: identity.userId,
     },
   });

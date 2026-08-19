@@ -23,7 +23,11 @@ import {
   MAX_EDGES,
   MAX_NODES,
 } from "@/lib/spec-agent/payload"
-import { isFinishedRunStatus } from "@/lib/trigger-run"
+import {
+  isFinishedRunStatus,
+  runMetadataFailureText,
+  runMetadataText,
+} from "@/lib/trigger-run"
 import { cn } from "@/lib/utils"
 import type { generateSpec } from "@/trigger/generate-spec"
 import type { ProjectSpecSummary } from "@/types/specs"
@@ -527,7 +531,7 @@ function GenerateSpecAction({
     // A dropped subscription publishes nothing trustworthy — whatever metadata
     // is cached predates the drop — so only the run's own reported failure
     // supplies its message.
-    const failureText = runError ? null : runFailureText(run?.metadata)
+    const failureText = runError ? null : runMetadataFailureText(run?.metadata)
 
     // Deferred so the settle never sets state synchronously inside the effect.
     // The guard is claimed inside the timer, not before it: a later realtime
@@ -630,7 +634,7 @@ function GenerateSpecAction({
           aria-live="polite"
           className="truncate px-1 text-xs text-copy-muted"
         >
-          {runStatusText(run?.metadata)}
+          {runMetadataText(run?.metadata, WORKING_FALLBACK)}
         </p>
       )}
 
@@ -645,32 +649,4 @@ function GenerateSpecAction({
       )}
     </div>
   )
-}
-
-/**
- * The run's latest status line. Metadata crosses the network, so it is checked
- * rather than trusted — an unexpected shape falls back to a generic line.
- */
-function runStatusText(metadata: unknown): string {
-  if (typeof metadata !== "object" || metadata === null) return WORKING_FALLBACK
-  const text = (metadata as { text?: unknown }).text
-  return typeof text === "string" && text.length > 0 ? text : WORKING_FALLBACK
-}
-
-/**
- * The failure message the run published, or `null` when it published none worth
- * showing — in which case the caller falls back to {@link RUN_FAILED_ERROR}.
- *
- * Only the `error` phase's text is taken: a run can fail after last publishing
- * a "processing…" line, and showing that as the error would read as though the
- * spec were still being written. Metadata crosses the network, so its shape is
- * checked rather than trusted, exactly as in {@link runStatusText}.
- */
-function runFailureText(metadata: unknown): string | null {
-  if (typeof metadata !== "object" || metadata === null) return null
-  const record = metadata as { phase?: unknown; text?: unknown }
-  if (record.phase !== "error") return null
-  return typeof record.text === "string" && record.text.length > 0
-    ? record.text
-    : null
 }

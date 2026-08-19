@@ -46,6 +46,33 @@ export interface BuildUnitPatch {
  */
 export type BuildUnitActionResult = { ok: true } | { ok: false; error: string }
 
+/**
+ * A started derivation run, as the caller needs it to track progress.
+ *
+ * Both values come from routes that already exist: the run id from
+ * `POST /api/ai/units`, and a read token scoped to just that run from
+ * `POST /api/ai/units/token`. Identical in shape to `ChangeRunHandle` in
+ * `use-project-changes.ts`, and deliberately not imported from it — the two
+ * hooks share no other type, and a build-unit hook depending on the change
+ * hook's exports would couple two unrelated tabs to make one field name match.
+ */
+export interface BuildUnitRunHandle {
+  runId: string
+  token: string
+}
+
+/**
+ * What `derive` reports back — the same split as the mutations above, plus the
+ * started run.
+ *
+ * It is a *handle*, not a result: the units do not exist until the run has
+ * written them, so there is nothing to add to `units` here. This is `propose`'s
+ * contract in `use-project-changes.ts`, not `create`'s, and for the same reason.
+ */
+export type DeriveUnitsActionResult =
+  | { ok: true; run: BuildUnitRunHandle }
+  | { ok: false; error: string }
+
 export interface UseProjectBuildUnitsResult {
   /** The project's units in build order (sequence ascending). */
   units: BuildUnitSummary[]
@@ -64,12 +91,21 @@ export interface UseProjectBuildUnitsResult {
   ) => Promise<BuildUnitActionResult>
   /** Remove a unit; the local row is dropped by `id`. */
   remove: (unitId: string) => Promise<BuildUnitActionResult>
+  /**
+   * Derive the units a project's current spec implies. Starts a durable run and
+   * returns its handle; the units are written by the run, so nothing is added
+   * here — the caller calls {@link UseProjectBuildUnitsResult.refresh} once the
+   * run completes.
+   */
+  derive: () => Promise<DeriveUnitsActionResult>
 }
 
 const LOAD_ERROR = "Couldn’t load your build units. Please try again."
 const CREATE_ERROR = "Couldn’t add that unit. Please try again."
 const UPDATE_ERROR = "Couldn’t save that change. Please try again."
 const DELETE_ERROR = "Couldn’t delete that unit. Please try again."
+const DERIVE_ERROR =
+  "Couldn’t start deriving build units. Please try again."
 
 /**
  * Read the actionable message off a failed response.
@@ -259,8 +295,84 @@ export function useProjectBuildUnits(
     [projectId],
   )
 
+  /**
+   * Start a derivation of the units this project's current spec implies.
+   *
+   * Sends only the room id — which *is* the project id. The spec is **not**
+   * named by the caller: `POST /api/ai/units` resolves access from `roomId` and
+   * then reads the project's current spec itself, because a route that
+   * access-checks one id and acts on another is the bug
+   * (`architecture-context.md`, after the 2026-08-17 room-scoping fix).
+   *
+   * Nothing is added to `units` here. The run writes them, so the caller
+   * refreshes the list once it completes — the same contract `propose` has in
+   * `use-project-changes.ts`, and the reason there is no optimistic insert.
+   */
+  const derive = useCallback(async (): Promise<DeriveUnitsActionResult> => {
+    try {
+      const response = await fetch("/api/ai/units", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roomId: projectId }),
+      })
+      if (!response.ok) {
+        // The 409 for a project with no spec is worded for a person by the
+        // route ("Generate a spec first — build units are derived from one"),
+        // so it travels through as it is; a generic fallback would throw away
+        // the actionable half of the message.
+        return {
+          ok: false,
+          error: await readErrorMessage(response, DERIVE_ERROR),
+        }
+      }
+
+      const { runId, publicToken } = (await response.json()) as {
+        runId?: string
+        publicToken?: string
+      }
+      if (!runId) {
+        throw new Error("Derive response is missing the run id")
+      }
+
+      // `pushToCanvas`'s two-step fallback: a trigger route that already handed
+      // back a token scoped to this run needs no second request, and the token
+      // route is the fallback for a response that carried only the id.
+      if (publicToken) {
+        return { ok: true, run: { runId, token: publicToken } }
+      }
+
+      const tokenResponse = await fetch("/api/ai/units/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ runId }),
+      })
+      if (!tokenResponse.ok) {
+        throw new Error(`Derive token failed (${tokenResponse.status})`)
+      }
+
+      const { token } = (await tokenResponse.json()) as { token?: string }
+      if (!token) {
+        throw new Error("Derive token response is missing the token")
+      }
+
+      return { ok: true, run: { runId, token } }
+    } catch (deriveError) {
+      console.error(deriveError)
+      return { ok: false, error: DERIVE_ERROR }
+    }
+  }, [projectId])
+
   return useMemo(
-    () => ({ units, isLoading, error, refresh, create, update, remove }),
-    [units, isLoading, error, refresh, create, update, remove],
+    () => ({
+      units,
+      isLoading,
+      error,
+      refresh,
+      create,
+      update,
+      remove,
+      derive,
+    }),
+    [units, isLoading, error, refresh, create, update, remove, derive],
   )
 }

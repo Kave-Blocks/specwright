@@ -75,12 +75,18 @@ second derivation skips everything on its own. The idempotency is the collision.
 
 ## Scope Limit, Taken Deliberately
 
-**There is no UI.** `ai-workflow-rules.md` says to split a step that combines UI changes and
+**There was no UI.** `ai-workflow-rules.md` says to split a step that combines UI changes and
 background-task changes, and the spec path was split exactly this way across `27` (backend), `28`
-(persistence), and `29` (UI). So this unit ends at the route. **Nothing in the product calls
-`POST /api/ai/units` yet** — the capability is reachable over HTTP and by the verification script,
-and by nothing a person can click. That is the next unit, and until it ships this unit is
-infrastructure rather than a feature.
+(persistence), and `29` (UI). So this unit ended at the route, and nothing in the product called
+`POST /api/ai/units` — the capability was reachable over HTTP and by the verification script, and
+by nothing a person could click.
+
+**Closed 2026-08-19 by unit [`46`](46-derive-units-ui.md)**, which is this route's caller: the
+Derive control on the Build tab, primary while the build list is empty and quiet beside the add
+form once it has units, reporting created, skipped, and dropped separately. The route and the
+token route were both exercised over real HTTP from a signed-in browser session there (`200` on
+each). What `46` could **not** close is the item below — the task still has never run in a worker,
+so a started run stays queued and no derivation has ever completed.
 
 ## Verified
 
@@ -128,6 +134,8 @@ Nothing below was checked, and none of it is claimed to work.
 - **The spec-moved refusal specifically.** It is the one deviation this unit added, it needs a
   second spec generated mid-run to observe, and the verification script cannot reach it — it tests
   the producer, and the refusal lives in the task.
-- **The browser**, trivially: there is no UI in this unit.
+- **The browser**, as far as *this* unit goes — it shipped no UI. Its caller, unit
+  [`46`](46-derive-units-ui.md), was browser-verified on 2026-08-19 as far as a queued run allows:
+  the control's states and both HTTP requests were observed, and every outcome state was not.
 - **The collaborator path**, which needs a second Clerk account — the same gap `38`, `41`, and `43`
   carry.

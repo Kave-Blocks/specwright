@@ -20,6 +20,7 @@ import {
   Waypoints,
 } from "lucide-react"
 
+import { HOUSE_BADGE } from "@/components/editor/house-badge"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -48,23 +49,6 @@ import {
   type ChangeStatusValue,
   type ChangeSummary,
 } from "@/types/changes"
-
-/**
- * The house badge treatment, verbatim from `build-unit-row.tsx`'s `BADGE` —
- * shape, fill, and border. It is not a Build-only style: `context/ui-context.md`
- * records it as the badge every surface wears, and the reason the pill is
- * recessed to `bg-base` rather than sitting on `bg-subtle` is contrast. Badge
- * text is 10px, under every large-text allowance, so each tone owes WCAG AA
- * 4.5:1, which `text-copy-muted` does not pay on `bg-subtle` (4.27:1) but does
- * on `bg-base` (5.16:1). The border is what keeps the pill a visible shape once
- * it is darker than the card it sits on.
- *
- * Tone is never baked in here: a status badge takes its `toneClass` from
- * `CHANGE_STATUS_DISPLAY`, the single source of how a status is worded and
- * colored. **Delta kinds take no tone at all** — see {@link DeltaGroup}.
- */
-const BADGE =
-  "rounded-full border border-surface-border bg-base px-2 py-0.5 text-[0.625rem] font-semibold tracking-wide uppercase"
 
 /**
  * Chip treatment — the established three states (selected / rest / hover) at
@@ -633,7 +617,7 @@ function ChangeRow({
           <span className="mt-2 flex flex-wrap items-center gap-1.5">
             <span
               aria-label={`Status: ${statusEntry.label}`}
-              className={cn(BADGE, statusEntry.toneClass)}
+              className={cn(HOUSE_BADGE, statusEntry.toneClass)}
             >
               {statusEntry.label}
             </span>
@@ -645,7 +629,7 @@ function ChangeRow({
              * "v" means, since "against v2" read aloud does not. */}
             <span
               aria-label={`Reasoned against spec version ${change.baseSpecVersion}`}
-              className={cn(BADGE, "text-copy-muted")}
+              className={cn(HOUSE_BADGE, "text-copy-muted")}
             >
               against v{change.baseSpecVersion}
             </span>
@@ -1380,7 +1364,7 @@ function DeltaGroup({
 
   return (
     <div>
-      <span className={cn(BADGE, "text-copy-muted")}>{label}</span>
+      <span className={cn(HOUSE_BADGE, "text-copy-muted")}>{label}</span>
       <ul className="mt-2 space-y-2">
         {entries.map((entry, index) => (
           <li

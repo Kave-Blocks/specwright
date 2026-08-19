@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useState, type CSSProperties, type ReactNode } from "react"
 
 import { EditorNavbar } from "@/components/editor/editor-navbar"
 import { ProjectActionsProvider } from "@/components/editor/project-actions-context"
@@ -48,7 +48,22 @@ export function EditorShell({
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
         />
-        <main className="flex flex-1 flex-col pt-14">{children}</main>
+        {/* Publishes `--canvas-inset-left` the way `EditorRoomShell` does, so
+         * in-flow content on this shell (Workspace Home's project grid) can pad
+         * itself clear of the `fixed` sidebar. A single centred block got away
+         * with sitting partly under it; a grid does not. */}
+        <main
+          className="flex flex-1 flex-col pt-[var(--editor-navbar-height)]"
+          style={
+            {
+              "--canvas-inset-left": isSidebarOpen
+                ? "var(--project-sidebar-width)"
+                : "0px",
+            } as CSSProperties
+          }
+        >
+          {children}
+        </main>
       </div>
 
       <ProjectDialogs />

@@ -88,7 +88,9 @@ export function EditorRoomShell({
             className="relative flex flex-1 flex-col overflow-hidden pt-[var(--editor-navbar-height)]"
             style={
               {
-                "--canvas-inset-left": isSidebarOpen ? "20rem" : "0px",
+                "--canvas-inset-left": isSidebarOpen
+                  ? "var(--project-sidebar-width)"
+                  : "0px",
               } as CSSProperties
             }
           >

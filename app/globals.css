@@ -117,6 +117,13 @@
      * hardcoding the combined value. */
     --canvas-toolbar-height: 3rem;
 
+    /* The floating project sidebar's width. Both editor shells publish it as
+     * `--canvas-inset-left` when the sidebar is open, and in-flow route content
+     * pads itself by that inset so it never renders underneath. Deliberately
+     * *not* shared with `--canvas-inset-right`: that is the AI chat panel's
+     * width, a different component that merely happens to be the same number. */
+    --project-sidebar-width: 20rem;
+
     /* shadcn semantic tokens mapped onto the dark theme */
     --background: var(--bg-base);
     --foreground: var(--text-primary);

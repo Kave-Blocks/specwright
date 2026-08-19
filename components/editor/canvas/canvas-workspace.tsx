@@ -16,6 +16,13 @@ import type { CanvasSaveStatus } from "@/types/canvas"
 
 interface CanvasWorkspaceProps {
   projectId: string
+  /**
+   * Seed the starter-templates picker open. Set by the canvas page from
+   * `?templates=1`, which "Browse starter designs" on Workspace Home routes to
+   * after creating the project. Initial state only — closing the picker does
+   * not have to clear the param, because nothing re-reads it.
+   */
+  openTemplatesOnMount?: boolean
 }
 
 /**
@@ -28,9 +35,12 @@ interface CanvasWorkspaceProps {
  * Narrowed from the former `EditorWorkspace`, which also owned those
  * project-wide pieces before Discovery and Specs became their own routes.
  */
-export function CanvasWorkspace({ projectId }: CanvasWorkspaceProps) {
+export function CanvasWorkspace({
+  projectId,
+  openTemplatesOnMount = false,
+}: CanvasWorkspaceProps) {
   const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(false)
-  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false)
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(openTemplatesOnMount)
   const [saveStatus, setSaveStatus] = useState<CanvasSaveStatus>("idle")
   const [aiActivity, setAiActivity] = useState<AiActivity>(IDLE_AI_ACTIVITY)
 

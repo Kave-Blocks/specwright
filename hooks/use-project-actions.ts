@@ -3,10 +3,24 @@
 import { useParams, useRouter } from "next/navigation"
 import { useState } from "react"
 
+import {
+  CANVAS_TEMPLATES_PARAM,
+  CANVAS_TEMPLATES_PARAM_VALUE,
+} from "@/lib/canvas-route"
 import { slugify, type Project } from "@/lib/projects"
 
+/**
+ * Where creating a project should land. A **closed union**, never a raw path
+ * string: a client-supplied path flowing into `router.push` is the wrong shape
+ * regardless of who calls it today.
+ */
+export type CreateProjectDestination =
+  | "project-home"
+  | "discovery"
+  | "canvas-templates"
+
 type DialogState =
-  | { type: "create" }
+  | { type: "create"; destination: CreateProjectDestination }
   | { type: "rename"; project: Project }
   | { type: "delete"; project: Project }
   | null
@@ -20,7 +34,7 @@ export interface UseProjectActions {
   roomId: string
   isSubmitting: boolean
   setName: (name: string) => void
-  openCreate: () => void
+  openCreate: (destination?: CreateProjectDestination) => void
   openRename: (project: Project) => void
   openDelete: (project: Project) => void
   closeDialog: () => void
@@ -37,6 +51,21 @@ interface UseProjectActionsInput {
 /** Short, URL-safe suffix that keeps room ids unique per project name. */
 function generateSuffix(): string {
   return Math.random().toString(36).slice(2, 8)
+}
+
+/** Where a freshly created project opens, per the destination the caller asked for. */
+function createdProjectPath(
+  projectId: string,
+  destination: CreateProjectDestination,
+): string {
+  switch (destination) {
+    case "discovery":
+      return `/editor/${projectId}/discovery`
+    case "canvas-templates":
+      return `/editor/${projectId}/canvas?${CANVAS_TEMPLATES_PARAM}=${CANVAS_TEMPLATES_PARAM_VALUE}`
+    case "project-home":
+      return `/editor/${projectId}`
+  }
 }
 
 /**
@@ -62,10 +91,10 @@ export function useProjectActions({
   // name plus a stable suffix generated when the create dialog opens.
   const roomId = `${slugify(name) || "project"}-${suffix}`
 
-  function openCreate() {
+  function openCreate(destination: CreateProjectDestination = "project-home") {
     setName("")
     setSuffix(generateSuffix())
-    setDialog({ type: "create" })
+    setDialog({ type: "create", destination })
   }
 
   function openRename(project: Project) {
@@ -86,6 +115,8 @@ export function useProjectActions({
     if (!trimmed || isSubmitting) return
 
     const id = roomId
+    const destination =
+      dialog?.type === "create" ? dialog.destination : "project-home"
     setIsSubmitting(true)
     try {
       const response = await fetch("/api/projects", {
@@ -97,7 +128,7 @@ export function useProjectActions({
         throw new Error(`Failed to create project (${response.status})`)
       }
       closeDialog()
-      router.push(`/editor/${id}`)
+      router.push(createdProjectPath(id, destination))
     } catch (error) {
       console.error(error)
     } finally {

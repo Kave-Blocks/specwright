@@ -16,7 +16,7 @@ Specwright is a real-time collaborative system design workspace. Users describe 
 ## Core User Flow
 
 1. User signs in.
-2. User creates or selects a project.
+2. User lands on **Workspace Home** (`/editor`), which branches on what they actually have: a grid of their recent projects to reopen, the projects shared with them when they own none, or — on a true first run — one sentence saying what a Specwright project is. Every branch offers the same three ways to start: a new empty project, a guided interview, or a starter system design. Starting work always creates the project first; the interview and the starter-design picker are where creating it lands.
 3. User enters the project workspace, landing on **Project Home** — a mode-selection view, not the canvas. Home shows five real mode cards (Architecture Interview, Canvas, Specs, Build, Changes), each reflecting an actual signal (canvas saved / spec count / units shipped / changes awaiting review) where one exists, plus a non-interactive "Planned" card for a future mode. No mode is locked behind another.
 4. From Home, the mode-switcher, or any mode card, the user reaches one of five equally-weighted, independently-addressable routes:
    - **Architecture Interview** (`/discovery`) — a guided, fully skippable interview that composes a structured project brief and submits it in place of a one-line prompt.

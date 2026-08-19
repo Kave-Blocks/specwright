@@ -10,6 +10,7 @@ import {
   Undo2,
 } from "lucide-react"
 
+import { HOUSE_BADGE } from "@/components/editor/house-badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type {
@@ -25,33 +26,6 @@ import {
   type BuildUnitSummary,
   type BuildUnitVerifiedValue,
 } from "@/types/build-units"
-
-/**
- * Collapsed-row badge treatment: the "Planned" card's shape in
- * `project-home-view.tsx`. `rounded-full` here is deliberate and is *not* the
- * chip radius below — a badge reports a value, a chip sets one, so they are
- * shaped apart on purpose.
- *
- * The fill is where it departs from that card, and the reason is contrast. A
- * badge carries 10px uppercase text, which is under every large-text
- * allowance, so each tone owes WCAG AA 4.5:1 — and on the `bg-subtle` fill the
- * quiet end of the table did not pay it (`text-copy-faint` 2.10:1,
- * `text-copy-muted` 4.27:1). Recessing the pill to `bg-base`, the darkest
- * registered surface, buys the whole table headroom (`text-copy-muted` reaches
- * 5.16:1, and no tone now sits under 5:1). Being opaque and darker than both
- * the card and the header's `hover:bg-elevated`, it also holds that ratio
- * steady while the row is hovered, which an unfilled badge would not.
- *
- * The border is what keeps the pill a visible shape once it is darker than the
- * card rather than lighter, matching the `border border-surface-border bg-base`
- * wells in `spec-markdown.tsx` and `starter-templates-modal.tsx`.
- *
- * The color is not baked in: each value carries its own `toneClass` from
- * `types/build-units.ts`, which is the single source of how a value is worded
- * and colored wherever it is shown.
- */
-const BADGE =
-  "rounded-full border border-surface-border bg-base px-2 py-0.5 text-[0.625rem] font-semibold tracking-wide uppercase"
 
 /**
  * Chip treatment — the established three states (selected / rest / hover),
@@ -505,7 +479,7 @@ function ValueBadge({
   return (
     <span
       aria-label={`${prefix}: ${entry.label}`}
-      className={cn(BADGE, entry.toneClass)}
+      className={cn(HOUSE_BADGE, entry.toneClass)}
     >
       {entry.label}
     </span>
@@ -515,8 +489,8 @@ function ValueBadge({
 /**
  * Where a unit came from, when it came from a spec.
  *
- * Same {@link BADGE} treatment as the status and verification badges rather
- * than a new chip style, and `text-copy-muted` — the quietest tone that still
+ * Same {@link HOUSE_BADGE} treatment as the status and verification badges
+ * rather than a new chip style, and `text-copy-muted` — the quietest tone that still
  * clears AA on the badge fill, and the one the neutral statuses already use, so
  * lineage reads as the quietest thing on the row. (The unit spec called this
  * `bg-subtle text-copy-muted`; `38` shipped the badge on `bg-base` because
@@ -530,7 +504,7 @@ function SourceSpecBadge({ version }: { version: number }) {
   return (
     <span
       aria-label={`From spec version ${version}`}
-      className={cn(BADGE, "text-copy-muted")}
+      className={cn(HOUSE_BADGE, "text-copy-muted")}
     >
       from v{version}
     </span>
@@ -540,8 +514,8 @@ function SourceSpecBadge({ version }: { version: number }) {
 /**
  * That a later change has replaced this unit's work.
  *
- * The same house {@link BADGE} at `text-copy-muted` as the lineage badge above,
- * and for the same reason: it is provenance, not a state of the work, so it must
+ * The same {@link HOUSE_BADGE} at `text-copy-muted` as the lineage badge
+ * above, and for the same reason: it is provenance, not a state of the work, so it must
  * not out-shout the status it sits beside. It is placed **after** status and
  * verification (and after the source-spec badge, which it belongs with) so a row
  * reads status → verification → provenance.
@@ -558,7 +532,7 @@ function SupersededBadge({ sequence }: { sequence: number }) {
   return (
     <span
       aria-label={`Replaced by change ${sequence}`}
-      className={cn(BADGE, "text-copy-muted")}
+      className={cn(HOUSE_BADGE, "text-copy-muted")}
     >
       replaced by change {sequence}
     </span>

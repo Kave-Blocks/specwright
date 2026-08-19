@@ -23,3 +23,4 @@ person doing it does not have to reconstruct the setup first.
 | Check | Owning unit | Blocked on |
 | --- | --- | --- |
 | [collaborator-access.md](collaborator-access.md) | 38 / 38a item 1 | A second Clerk account |
+| [workspace-home-empty-branches.md](workspace-home-empty-branches.md) | 45 | A fresh Clerk account (and a second one for the shared branch) |

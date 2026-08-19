@@ -1,22 +1,24 @@
 import { EditorShell } from "@/components/editor/editor-shell"
-import { NewProjectButton } from "@/components/editor/new-project-button"
-import { getEditorHomeProjects } from "@/lib/projects-data"
+import { WorkspaceHomeView } from "@/components/editor/home/workspace-home-view"
+import { getWorkspaceHomeProjects } from "@/lib/projects-data"
 
+/**
+ * Workspace Home — the app's landing screen, since `app/page.tsx` redirects
+ * every authenticated user here.
+ *
+ * One fetch feeds both the shell and the view: `WorkspaceProject` extends
+ * `Project`, so the same arrays satisfy `EditorShell`'s sidebar props and the
+ * view's richer ones.
+ */
 export default async function EditorHomePage() {
-  const { ownedProjects, sharedProjects } = await getEditorHomeProjects()
+  const { ownedProjects, sharedProjects } = await getWorkspaceHomeProjects()
 
   return (
     <EditorShell ownedProjects={ownedProjects} sharedProjects={sharedProjects}>
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-        <h1 className="font-heading text-2xl font-medium text-copy-primary">
-          Create a project or open an existing one
-        </h1>
-        <p className="max-w-md text-sm text-copy-muted">
-          Start a new architecture workspace, or choose a project from the
-          sidebar.
-        </p>
-        <NewProjectButton />
-      </div>
+      <WorkspaceHomeView
+        ownedProjects={ownedProjects}
+        sharedProjects={sharedProjects}
+      />
     </EditorShell>
   )
 }

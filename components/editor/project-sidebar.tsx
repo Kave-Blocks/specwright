@@ -29,7 +29,7 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
     <aside
       aria-hidden={!isOpen}
       className={cn(
-        "fixed left-3 top-[calc(var(--editor-navbar-height)+0.75rem)] z-30 flex h-[calc(100vh-var(--editor-navbar-height)-1.5rem)] w-80 flex-col rounded-2xl border border-surface-border bg-surface/95 shadow-2xl backdrop-blur-sm",
+        "fixed left-3 top-[calc(var(--editor-navbar-height)+0.75rem)] z-30 flex h-[calc(100vh-var(--editor-navbar-height)-1.5rem)] w-(--project-sidebar-width) flex-col rounded-2xl border border-surface-border bg-surface/95 shadow-2xl backdrop-blur-sm",
         "transition-transform duration-200 ease-out",
         isOpen
           ? "translate-x-0"
@@ -106,7 +106,9 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
       </Tabs>
 
       <div className="border-t border-surface-border p-4">
-        <Button className="w-full" onClick={openCreate}>
+        {/* `() => openCreate()` rather than `openCreate` — passed bare, the
+         * click event arrives as the destination argument. */}
+        <Button className="w-full" onClick={() => openCreate()}>
           <Plus className="h-4 w-4" />
           New Project
         </Button>

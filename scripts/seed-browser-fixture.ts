@@ -185,6 +185,14 @@ async function seedApplyProject(d: Deps, ownerId: string) {
           component: "Realtime canvas",
           detail: "Reads from the queue before the socket.",
         },
+        // Never drawn — `removed` is excluded from the canvas-sync prompt and
+        // reported instead, so this is what makes the push outcome's
+        // skipped-removals list render. See lib/canvas-sync/plan.ts.
+        {
+          kind: "removed" as const,
+          component: "Direct socket writer",
+          detail: "Superseded by the queue.",
+        },
       ],
       affectedUnits: [
         { buildUnitId: units[0]!.id, reason: "Writes now go through the queue." },

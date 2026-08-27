@@ -34,20 +34,42 @@ Ordered by leverage — what unblocks the most for the least effort, first.
 
 | Plan | Closes | Blocked on | Rough effort |
 | --- | --- | --- | --- |
-| [canvas-write-back-live-proof.md](canvas-write-back-live-proof.md) | The room, browser, and end-to-end bullets of unit 43's `## Not Verified` — **not** its HTTP layer or collaborator path | Trigger.dev env vars, unconfirmed | ~45 min – 2 h |
+| [specs-cold-load-race.md](specs-cold-load-race.md) | A false "canvas is empty" error on every cold load of `/specs` — shipped, user-facing, and self-hiding | Nothing | ~30 min |
+| [verify-canvas-http.md](verify-canvas-http.md) | Unit 43's HTTP layer — the route's two 409s, its 404 masking, its signed-out path | Nothing | ~40 min |
 | [collaborator-account.md](collaborator-account.md) | Auth gap in units 38, 39, 40, 41 | A second Clerk account (a person) | ~15 min |
 | [browser-verification-40-41.md](browser-verification-40-41.md) | Unit 40's failure UI (41's and 42's passes done 2026-08-16) | Nothing | ~20 min |
 | [deferred-contrast-measurement.md](deferred-contrast-measurement.md) | Unit 38a item 6's five deferred sites | Nothing | ~30 min |
 | [trigger-deploy-audit.md](trigger-deploy-audit.md) | Unknown production state of three tasks | Nothing | ~15 min |
 | [accepted-limits.md](accepted-limits.md) | Nothing — it records what is **not** worth chasing | Nothing | Read once |
 
-Two plans came out of building unit **43**. The first, `design-route-room-scoping.md`, **landed
-2026-08-17** ([`../progress/2026-08-17-design-route-room-scoping.md`](../progress/2026-08-17-design-route-room-scoping.md)):
+Two plans came out of building unit **43**, and **both have now landed.**
+`design-route-room-scoping.md` landed **2026-08-17**
+([`../progress/2026-08-17-design-route-room-scoping.md`](../progress/2026-08-17-design-route-room-scoping.md)):
 `POST /api/ai/design` stopped accepting a `roomId` it never access-checked, closing a cross-project
 canvas write and delete. It was ordered ahead of the live proof on purpose — a small change to
 shipped code that closed something reachable today, against a longer piece of work that closes
-something only *unproven*. The live proof, still outstanding above, is the more interesting of the
-two and remains the next thing 43 needs.
+something only *unproven*.
+
+`canvas-write-back-live-proof.md` landed **2026-08-27**, and the loop was finally observed closing:
+a change applied, pushed to the canvas, and a spec generated from that canvas containing *"The
+Realtime Canvas interacts with a Sync Queue for managing real-time updates."* All five push-control
+states and both drift-notice wordings were seen. `43` moved `structural` → **`partial`**, never
+`browser` — the HTTP layer and the collaborator path were always out of a browser pass's reach,
+which is why `verify-canvas-http.md` sits at the top of the table above.
+
+**Three rows were filed by that one pass**, which is the folder's own thesis
+arriving on schedule: the live proof closed 43's end-to-end gap and found the route's untested
+refusals, an `updateNode` free to relabel a node the change never named, and — outside 43 entirely —
+a cold-load race telling people their canvas is empty when it is not. Note which of the three is
+most valuable: the one that had nothing to do with the unit being verified. A pass that only
+confirms what it set out to confirm is a pass that was not looking.
+
+The `updateNode` one **landed the same day**: the owner chose to constrain the target, and an
+`updateNode` now survives only against a node the change's delta names — refused elsewhere,
+reported to the person, and counted apart from the destructive drops. `verify:db` went from 253
+assertions to **278**. The reasoning is in
+[`../architecture-context.md`](../architecture-context.md)'s `## Canvas Write-Back`; the record is
+`43`'s second follow-up of 2026-08-27.
 
 Unit **42** ([`../progress/42-spec-drift.md`](../progress/42-spec-drift.md)) was the one gap from
 that sweep that is genuinely new capability, so it was a numbered unit rather than a plan. It

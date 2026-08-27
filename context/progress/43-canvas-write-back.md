@@ -140,25 +140,146 @@ in full — unit `42`'s counting was extended, not altered.
 
 ## Not Verified
 
-Nothing below was checked, and none of it is claimed to work.
+The live proof of 2026-08-27 (see the follow-up below) closed the room, browser, end-to-end and
+`trigger dev` items that used to be listed here. What is left was never reachable from a browser.
 
-- **Everything that touches a Liveblocks room.** That `applyDesignPlan` really adds the nodes and
-  edges into the room, that participants watch them arrive, that **no node or edge that existed
-  before a push is missing after it**, and that AI presence appears and clears. This needs a
-  signed-in browser, a running `npx trigger dev` worker, and a live model call.
-- **The end-to-end check this whole unit exists for**: pushing every applied change since the
-  current spec and then generating a spec that *contains the changed architecture*. It has never
-  passed, because it could not before now.
 - **The HTTP layer.** The route's two 409s, its 404 masking, and the signed-out and non-member
-  paths are unexercised — there is no `verify:canvas-http` counterpart to `verify:apply-http`
-  yet.
-- **The browser.** The push control's five states (applied-and-unpushed, running, pushed,
-  failed-and-retriable, outcome with removals versus without) and the drift notice's two wordings
-  are unobserved.
+  paths are unexercised — there is still no `verify:canvas-http` counterpart to `verify:apply-http`.
+  Filed as [`../plans/verify-canvas-http.md`](../plans/verify-canvas-http.md); this is the next
+  thing `43` needs.
 - **Model behaviour.** Whether the prompt actually produces a sensible extension of an existing
   diagram is not something a script can assert. The filter is what guarantees it cannot do harm;
-  nothing guarantees it does good.
+  nothing guarantees it does good. The 2026-08-27 pass sharpened this rather than settling it — the
+  model relabelled an existing node to match a `modified` entry, which was legal at the time and was
+  disclosed. That particular freedom is now gone (see the second follow-up below): an `updateNode`
+  only survives against a node the delta names. What remains unfalsifiable is the wider question —
+  whether what the model *does* draw is a sensible diagram.
 - **The collaborator path**, which needs a second Clerk account — the same gap `38` and `41`
-  carry.
-- **Deployment.** The new task is registered by file placement under `trigger/`, but no
-  `trigger dev` or `trigger deploy` run has picked it up yet.
+  carry. See [`../plans/collaborator-account.md`](../plans/collaborator-account.md).
+- **`trigger deploy`.** The `trigger dev` half is now proven — worker `20260821.1` registered the
+  task and really ran it, twice. No production deploy has picked it up. See
+  [`../plans/trigger-deploy-audit.md`](../plans/trigger-deploy-audit.md).
+
+### Follow-up — 2026-08-27 — the live proof
+
+Ran `plans/canvas-write-back-live-proof.md` end to
+end (deleted on completion, as that folder's convention requires) in a signed-in browser: dev server on port 3001, Trigger.dev worker `20260821.1` with
+`canvas-sync` registered, both fixtures from
+[`../../scripts/seed-browser-fixture.ts`](../../scripts/seed-browser-fixture.ts). Zero console
+errors across the pass.
+
+**The check this unit exists for passed.** The seeded change was applied, pushed to the canvas, and
+a new spec generated from that canvas. Version 2 contains, verbatim:
+
+> "The Realtime Canvas interacts with a Sync Queue for managing real-time updates."
+
+`Sync Queue` is the change's `added` delta entry. The loop is now observed closing, not inferred
+closing.
+
+**What else the pass observed.** The drift notice moved between both wordings — *"It hasn't reached
+the canvas yet, and specs are written from the canvas"* before the push, *"It's on the canvas, so
+generating a new spec now will describe it"* after — and disappeared once v2 existed. All **five**
+states of the push control were seen, which no earlier pass had managed: applied-and-unpushed
+(secondary treatment, not `bg-brand`), running (disabled, "Adding to canvas…"), pushed (no control,
+no re-push), outcome-with-removals, and failed-and-retriable. Nodes arrived over the realtime
+channel with no reload, and the AI presence appeared and then cleared.
+
+The removals well rendered without hand-editing a stored document, because the fixture was given a
+`removed` entry first — see the fixture note below. It read: *"1 part of the change retires
+something, which Specwright doesn't remove for you — take these off the canvas yourself:"* →
+`Direct socket writer`.
+
+Failed-and-retriable was forced by commenting `OPENAI_API_KEY` out of `.env.local` and restarting
+the worker. `POST /api/ai/canvas` returned 201, the run resolved to failure with **"OPENAI_API_KEY
+is not set"**, `canvasPushedAt` was never written, and the control **returned to offering the push
+rather than latching disabled** — the retry property `verify:canvas -- retry` proves in the
+database, now seen in the UI. The key was restored and the worker restarted afterwards.
+
+**The safety property held as this file states it, and not as the plan worded it.** Nothing was
+deleted: all seven baseline nodes survived, and the edge count went 6 → 8. But one baseline node's
+**label did not survive**. The baseline was the Microservices starter template; after the push the
+node `ms-orders` — same id, same position, both its edges intact — read **"Realtime Canvas"**
+instead of **"Orders Service"**, matching the delta's `modified: Realtime canvas` entry. The outcome
+well disclosed it as *"1 node updated."*
+
+This is permitted by design, not a filter escape: `updateNode` is in `ALLOWED_OPERATIONS` in
+[`../../lib/canvas-sync/plan.ts`](../../lib/canvas-sync/plan.ts). It is still worth recording as a
+gap, because the filter's own stated contract is that *the one thing this unit must never do is
+destroy canvas work in order to record a change*, and the same file excludes `moveNode` and
+`resizeNode` on the grounds that *nothing in an architecture delta justifies moving somebody else's
+diagram*. Overwriting a node's identity is that harm and worse — a move is visible and recoverable,
+a relabel is not. **Closed the same day** — see the second follow-up below. The
+mitigating detail: the baseline template had no "Realtime canvas" node to match, so the model
+reached for the nearest one; a real project's canvas would usually contain it.
+
+**A defect outside this unit, found by this pass.** On a *fresh page load* of `/specs`, Generate
+Spec fails with *"Add some nodes to the canvas before generating a spec"* despite the canvas holding
+eight saved nodes, and **no request is sent**. Reached instead by client-side navigation from the
+canvas, the same action succeeds immediately. It is a Liveblocks hydration race — the button is
+interactive before Storage resolves — and it blocked this pass until it was routed around. It
+belongs to the spec-generation units, not to `43`. Filed as
+[`../plans/specs-cold-load-race.md`](../plans/specs-cold-load-race.md).
+
+**Fixture change.** [`../../scripts/seed-browser-fixture.ts`](../../scripts/seed-browser-fixture.ts)
+now seeds a third delta entry on the apply fixture — `removed: "Direct socket writer"`. The plan had
+called for hand-editing the stored proposal document to reach the removals well; putting it in the
+seed makes that state reachable in the ordinary pass and keeps it reachable for the next one. It
+cannot affect what the push draws: `removed` is excluded from the prompt at
+[`../../lib/canvas-sync/plan.ts`](../../lib/canvas-sync/plan.ts) and only feeds `skippedRemovals`.
+
+### Follow-up — 2026-08-27 — `updateNode` scoped to the nodes a change names
+
+Closed the gap the live proof found earlier the same day, taking **option 1** of the plan it was
+filed as (`plans/canvas-sync-update-node-scope.md`, deleted on completion): constrain the target
+rather than drop the operation or accept the limit.
+
+**The rule.** An `updateNode` survives the filter only when the node it targets currently carries a
+label matching a **`modified`** entry in that change's delta. Matching is case-insensitive with
+whitespace collapsed. `added` entries license nothing: `added` says the canvas does not have that
+part yet, so a node already carrying that label belongs to somebody else.
+
+The looseness is argued from asymmetry, not taste, and the argument is recorded in
+[`../../lib/canvas-sync/plan.ts`](../../lib/canvas-sync/plan.ts) and in
+[`../architecture-context.md`](../architecture-context.md)'s `## Canvas Write-Back`. Too strict and
+the component is drawn as a **new node** — additive, visible, mergeable by hand. Too loose and a
+node keeps its id, position and edges while quietly becoming a different thing, which nothing
+downstream can detect, because the next spec generated from that canvas describes the new label as
+though it had always been there. So the match forgives case and stray whitespace and nothing else.
+Substring or token-overlap matching is the obvious next step and is explicitly refused: architecture
+labels share generic words, so `Users Service` would license an update against `Orders Service` —
+the original bug, reintroduced.
+
+**A refused update is reported, not logged and forgotten.** It is counted apart from
+`droppedOperations`, which stays reserved for `deleteNode`/`deleteEdge`/`moveNode`/`resizeNode`.
+That number should never be non-zero and reads as an alarm; an update aimed at the wrong node is
+ordinary. One counter would hide the ordinary case inside the alarm. The outcome well now says:
+*"Specwright was asked to rename 1 node this change never mentions, and didn't — it is untouched on
+the canvas."*
+
+**The outcome also names what it did change.** `ChangeCanvasPushOutcome` gained `updatedNodes`,
+each carrying the label its node had **before** the push, so the well reads
+`Orders Service — now Realtime Canvas` rather than the bare `1 node updated` that made the original
+overwrite undiscoverable. A restyle with no rename reports the label once rather than inventing
+`X — now X`.
+
+**Behaviour change worth knowing.** A `modified` entry that matches no node on the canvas is now
+drawn as a new node instead of relabelling whatever the model picked. A canvas can therefore end up
+holding both `Orders Service` and a new `Realtime Canvas`. That is the intended direction — the loss
+that cannot be detected is the one worth preventing — and it is why the refusal is surfaced in the
+outcome rather than left in a log.
+
+**Verified.** `npm run verify:db` passes at **278 assertions**, up from 253; `npx tsc --noEmit`
+exits 0; `npx eslint` on every changed file exits 0. The new `update` phase of
+[`../../scripts/verify-canvas-write-back.ts`](../../scripts/verify-canvas-write-back.ts) reproduces
+the 2026-08-27 failure exactly — canvas holding the Microservices template, delta naming
+`Realtime canvas`, an `updateNode` aimed at `Orders Service` — and asserts it is refused, reported
+by the label the node still carries, and **not** counted as a destructive drop. It then applies the
+surviving plan to an in-memory flow and reads the labels back, so the assertion is that
+`Orders Service` still reads `Orders Service` on the canvas rather than that the filter returned the
+right array. The legitimate case is asserted alongside it — a node labelled `Realtime Canvas`
+against a delta naming `Realtime canvas` is permitted, lands, and leaves every other node alone —
+so the rule cannot pass by refusing everything.
+
+**Not verified.** No live room, no model call, and no browser. The filter is proven against
+hand-authored plans, which is the stronger proof for a guard, but the outcome well's two new blocks
+have not been seen rendered. They are cheap to fold into the next browser pass on this surface.

@@ -2,8 +2,16 @@ import { prismaExtension } from "@trigger.dev/build/extensions/prisma";
 import { defineConfig } from "@trigger.dev/sdk";
 import { config } from "dotenv";
 
-// The Trigger.dev CLI evaluates this file in Node and only auto-loads `.env`,
-// so load Next.js's `.env.local` here to pick up TRIGGER_PROJECT_REF.
+// The CLI resolves `.env`, `.env.development`, `.env.local`,
+// `.env.development.local`, and `dev.vars` into an object it hands to the task
+// worker — `resolveDotEnvVars` writes into a local object, never `process.env`
+// (`trigger.dev/dist/esm/utilities/dotEnv.js`). So nothing is loaded into the
+// process that evaluates *this* file, and TRIGGER_PROJECT_REF has to be read
+// here explicitly.
+//
+// Tasks need no such help: `.env.local` reaches them through that resolver like
+// every other key. Note the CLI's precedence is the **inverse** of Next.js's —
+// first file found wins, so `.env` beats `.env.local` there and loses to it here.
 // In CI/deploy, set TRIGGER_PROJECT_REF in the environment instead.
 config({ path: ".env.local" });
 

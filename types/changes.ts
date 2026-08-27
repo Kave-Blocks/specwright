@@ -147,6 +147,28 @@ export interface ChangeApplyResponse {
 }
 
 /**
+ * One node a canvas write-back changed in place, rather than added.
+ *
+ * It carries the label the node had **before** the push because that is the
+ * only thing a person can check the operation against. "1 node updated" names
+ * neither the node nor what it used to be called, so a correct relabel goes
+ * unnoticed and an incorrect one is undiscoverable — which is exactly how the
+ * 2026-08-27 live proof came within one sentence of not noticing that a node
+ * called `Orders Service` had stopped existing.
+ *
+ * `label` is what it carries now. The two are **equal** when the operation
+ * changed only the node's shape or colour, which is a real and unremarkable
+ * outcome rather than a bug — the renderer says nothing about a rename in that
+ * case.
+ */
+export interface ChangeCanvasNodeUpdate {
+  /** What the node was called on the canvas before this change was drawn. */
+  previousLabel: string
+  /** What it is called now — the same string when only its styling changed. */
+  label: string
+}
+
+/**
  * What a canvas write-back actually did, returned as the `canvas-sync` run's
  * output and rendered by the Changes view.
  *
@@ -163,6 +185,29 @@ export interface ChangeCanvasPushOutcome {
   nodesAdded: number
   nodesUpdated: number
   edgesAdded: number
+  /**
+   * The nodes behind `nodesUpdated`, each with the label it had before.
+   *
+   * A count on its own cannot be checked by the person reading it, and an
+   * update is the one operation here that overwrites something rather than
+   * adding to it. Naming what each node used to be called is what makes a wrong
+   * target visible at all.
+   */
+  updatedNodes: ChangeCanvasNodeUpdate[]
+  /**
+   * Nodes an `updateNode` was **refused** against, by the label they still
+   * carry on the canvas.
+   *
+   * Deliberately not folded into {@link ChangeCanvasPushOutcome.droppedOperations}:
+   * that number means *the model asked to destroy or rearrange somebody's work*
+   * and is normally zero, so hiding a routine mis-aimed update inside it would
+   * both cost the counter its "this should not happen" meaning and bury the
+   * refusal. Reported rather than swallowed, for the same reason
+   * {@link ChangeCanvasPushOutcome.skippedRemovals} is: a `modified` entry that
+   * vanishes silently leaves the canvas and the change disagreeing with nobody
+   * told.
+   */
+  refusedUpdates: string[]
   /**
    * Components in the delta's `removed` group, which are **reported and never
    * drawn**.

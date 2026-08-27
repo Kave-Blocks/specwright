@@ -201,14 +201,36 @@ export const canvasSync = task({
       });
 
       // 5. The harness, not the wish. A hallucinated `deleteNode` would remove a
-      // node a person drew, along with every edge attached to it.
-      const { plan: additive, dropped } = filterAdditivePlan(plan);
+      // node a person drew, along with every edge attached to it — and an
+      // `updateNode` aimed at a node this change never named would overwrite
+      // what that node records. The filter needs both sides to judge the second:
+      // what the delta named, and what the canvas currently calls its nodes.
+      const {
+        plan: additive,
+        dropped,
+        refusedUpdates,
+        updatedNodes,
+      } = filterAdditivePlan(plan, {
+        nodes: current.nodes,
+        architectureDelta: proposal.architectureDelta,
+      });
       if (dropped > 0) {
         logger.warn("canvas-sync dropped destructive operations", {
           roomId,
           changeId,
           dropped,
           returned: plan.operations.length,
+        });
+      }
+      // Logged apart from the drops above, and at `warn` rather than `error`:
+      // this is the model aiming a legitimate operation at the wrong node, not
+      // an attempt to destroy work. It also travels to the person in the
+      // outcome — a log nobody reads is not a report.
+      if (refusedUpdates.length > 0) {
+        logger.warn("canvas-sync refused updates against unnamed nodes", {
+          roomId,
+          changeId,
+          refusedUpdates,
         });
       }
 
@@ -247,10 +269,17 @@ export const canvasSync = task({
       // retry state — the control stays available.
       await markChangePushed(projectId, changeId);
 
+      // `nodesUpdated` is what `applyDesignPlan` actually did; `updatedNodes` is
+      // what the filter permitted. They agree by construction — an update only
+      // survives the filter when its target is a node that exists on the canvas
+      // — and the count stays the applied one so the two can never disagree in
+      // the direction of overstating the canvas.
       const outcome: ChangeCanvasPushOutcome = {
         nodesAdded: applied.nodesAdded,
         nodesUpdated: applied.nodesUpdated,
         edgesAdded: applied.edgesAdded,
+        updatedNodes,
+        refusedUpdates,
         skippedRemovals: skippedRemovals(proposal.architectureDelta),
         droppedOperations: dropped,
       };

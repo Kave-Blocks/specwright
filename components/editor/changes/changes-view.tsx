@@ -40,6 +40,7 @@ import {
   CHANGE_STATUS_DISPLAY,
   changeDeltaKindLabel,
   type ChangeApplyResponse,
+  type ChangeCanvasNodeUpdate,
   type ChangeCanvasPushOutcome,
   type ChangeDeltaEntry,
   type ChangeDisplayEntry,
@@ -1089,6 +1090,15 @@ function CanvasPushAction({
  * complete. It follows the shape of `41`'s skipped-titles list: one line of
  * explanation, then the component names as items, with no second list treatment
  * invented for it.
+ *
+ * Two later lists join it in the same treatment, both about `updateNode` — the
+ * one operation here that overwrites rather than adds. Nodes changed **in
+ * place** are named by what they used to be called, because "1 node updated"
+ * names neither the node nor its old label and so makes a correct relabel
+ * invisible and a wrong one undiscoverable. Nodes an update was **refused**
+ * against are named for the mirror-image reason the removals are: the operation
+ * was aimed at a node this change never mentions, and saying nothing would let
+ * a `modified` entry vanish without trace.
  */
 function CanvasPushOutcome({
   outcome,
@@ -1118,6 +1128,25 @@ function CanvasPushOutcome({
           : "Added to the canvas. Nothing new needed drawing."}
       </p>
 
+      {outcome.updatedNodes.length > 0 && (
+        <div className="text-xs text-copy-muted">
+          <p>
+            {countLabel(outcome.updatedNodes.length, "node", "nodes")} already on
+            the canvas {outcome.updatedNodes.length === 1 ? "was" : "were"}{" "}
+            changed in place rather than added:
+          </p>
+          <OutcomeList
+            items={outcome.updatedNodes.map((update) =>
+              // Equal labels mean the node was restyled, not renamed — saying
+              // "X — now X" would invent a change that did not happen.
+              update.previousLabel === update.label
+                ? update.previousLabel
+                : `${update.previousLabel} — now ${update.label}`
+            )}
+          />
+        </div>
+      )}
+
       {outcome.skippedRemovals.length > 0 && (
         <div className="text-xs text-copy-muted">
           <p>
@@ -1125,18 +1154,24 @@ function CanvasPushOutcome({
             change retires something, which Specwright doesn’t remove for you —
             take these off the canvas yourself:
           </p>
-          <ul className="mt-1 space-y-0.5">
-            {outcome.skippedRemovals.map((component, index) => (
-              <li key={`${component}-${index}`} className="flex gap-2">
-                {/* Decoration, not content — the component name is the item —
-                 * so `text-copy-faint` is licensed here. */}
-                <span aria-hidden className="text-copy-faint">
-                  •
-                </span>
-                <span>{component}</span>
-              </li>
-            ))}
-          </ul>
+          <OutcomeList items={outcome.skippedRemovals} />
+        </div>
+      )}
+
+      {/* A refusal, in the same voice as the removals above and never as an
+        * alert: nothing failed. Specwright only relabels a node the change
+        * names, and a `modified` entry that quietly matched nothing would leave
+        * the canvas and the change disagreeing with nobody told. */}
+      {outcome.refusedUpdates.length > 0 && (
+        <div className="text-xs text-copy-muted">
+          <p>
+            Specwright was asked to rename{" "}
+            {countLabel(outcome.refusedUpdates.length, "node", "nodes")} this
+            change never mentions, and didn’t —{" "}
+            {outcome.refusedUpdates.length === 1 ? "it is" : "they are"}{" "}
+            untouched on the canvas:
+          </p>
+          <OutcomeList items={outcome.refusedUpdates} />
         </div>
       )}
 
@@ -1144,6 +1179,32 @@ function CanvasPushOutcome({
         A new spec generated from the canvas will now describe this change.
       </p>
     </div>
+  )
+}
+
+/**
+ * The one list treatment inside the push-outcome well — named components, one
+ * per line, under the sentence that explains them.
+ *
+ * Shared rather than repeated so the three things this well reports (what was
+ * changed in place, what was not removed, what was not renamed) read as one
+ * kind of item. A second list style here would say they are different kinds of
+ * thing, which they are not.
+ */
+function OutcomeList({ items }: { items: string[] }) {
+  return (
+    <ul className="mt-1 space-y-0.5">
+      {items.map((item, index) => (
+        <li key={`${item}-${index}`} className="flex gap-2">
+          {/* Decoration, not content — the name is the item — so
+           * `text-copy-faint` is licensed here. */}
+          <span aria-hidden className="text-copy-faint">
+            •
+          </span>
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
   )
 }
 
@@ -1167,6 +1228,8 @@ function readPushOutcome(output: unknown): ChangeCanvasPushOutcome {
     nodesAdded: 0,
     nodesUpdated: 0,
     edgesAdded: 0,
+    updatedNodes: [],
+    refusedUpdates: [],
     skippedRemovals: [],
     droppedOperations: 0,
   }
@@ -1176,18 +1239,48 @@ function readPushOutcome(output: unknown): ChangeCanvasPushOutcome {
   const record = output as Record<string, unknown>
   const count = (value: unknown): number =>
     typeof value === "number" && Number.isFinite(value) ? value : 0
+  const names = (value: unknown): string[] =>
+    Array.isArray(value)
+      ? value.filter((entry): entry is string => typeof entry === "string")
+      : []
 
   return {
     nodesAdded: count(record.nodesAdded),
     nodesUpdated: count(record.nodesUpdated),
     edgesAdded: count(record.edgesAdded),
-    skippedRemovals: Array.isArray(record.skippedRemovals)
-      ? record.skippedRemovals.filter(
-          (entry): entry is string => typeof entry === "string"
-        )
-      : [],
+    // A run that completed before these fields existed carries neither, and
+    // reads as "nothing to report" rather than as `undefined` — the same
+    // property every other field here has, for the same reason.
+    updatedNodes: readNodeUpdates(record.updatedNodes),
+    refusedUpdates: names(record.refusedUpdates),
+    skippedRemovals: names(record.skippedRemovals),
     droppedOperations: count(record.droppedOperations),
   }
+}
+
+/**
+ * Read the relabelled-node list off a run's output.
+ *
+ * An entry with no `previousLabel` is **dropped rather than rendered**: the
+ * whole point of this list is to name what a node used to be called, and an
+ * item that cannot do that is worse than no item. A missing `label` means the
+ * node was restyled and not renamed, so it reads as unchanged.
+ */
+function readNodeUpdates(value: unknown): ChangeCanvasNodeUpdate[] {
+  if (!Array.isArray(value)) return []
+
+  return value.flatMap((entry) => {
+    if (typeof entry !== "object" || entry === null) return []
+    const record = entry as Record<string, unknown>
+    if (typeof record.previousLabel !== "string") return []
+    return [
+      {
+        previousLabel: record.previousLabel,
+        label:
+          typeof record.label === "string" ? record.label : record.previousLabel,
+      },
+    ]
+  })
 }
 
 /**

@@ -162,7 +162,8 @@ Applying a change moves the build list; the canvas is what a spec is written fro
 
 - **It is a background task, not part of `41`'s transaction, and that is a correctness requirement rather than a preference.** A CRDT write is not transactional with Postgres: there is no way to commit "the units were created" and "the nodes were drawn" together, so one of them must be able to fail alone. Applying is the one that must not — a half-applied build list is unreadable — so drawing is the one that is retried. It also makes a model call, and a request handler does not run long-lived AI work (invariant 1).
 - **One model call, through `generateDesignPlan`.** No second design model, no second provider, no second prompt-building module: `DESIGN_MODEL` stays the one place the model is named. What `lib/canvas-sync/plan.ts` adds is the *request* — that this is an existing diagram being extended, not a new one being drawn — because the same function also serves freeform design, where replacing the graph is legitimate.
-- **The destructive-operation filter is a harness, not a prompt instruction.** `deleteNode`, `deleteEdge`, `moveNode`, and `resizeNode` are stripped from the model's plan in code before it reaches `applyDesignPlan`; only `addNode`, `updateNode`, and `addEdge` survive. A prompt is a wish, and `40` already records that this model invents identifiers it was never given — a hallucinated `deleteNode` would remove a node a person drew, along with `applyDesignPlan`'s cascade of every edge touching it. Moves and resizes go for a different reason: they rearrange a shared document people laid out by hand, and nothing in a delta justifies it. This is **not** a second layer of the validation `applyDesignPlan` already does; that skips operations which are *invalid*, and these are operations that are valid and would succeed.
+- **The destructive-operation filter is a harness, not a prompt instruction.** `deleteNode`, `deleteEdge`, `moveNode`, and `resizeNode` are stripped from the model's plan in code before it reaches `applyDesignPlan`; only `addNode`, `updateNode`, and `addEdge` survive — and `updateNode` only against a node the change actually names, which is the next rule. A prompt is a wish, and `40` already records that this model invents identifiers it was never given — a hallucinated `deleteNode` would remove a node a person drew, along with `applyDesignPlan`'s cascade of every edge touching it. Moves and resizes go for a different reason: they rearrange a shared document people laid out by hand, and nothing in a delta justifies it. This is **not** a second layer of the validation `applyDesignPlan` already does; that skips operations which are *invalid*, and these are operations that are valid and would succeed.
+- **`updateNode` is scoped to the nodes the delta names, and that scope is in the filter rather than the prompt.** `updateNode` is on the allow-list because redrawing a modified component is the point of a `modified` delta — but unlike `addNode` and `addEdge` it *overwrites* rather than extends, so unconstrained it is the one permitted operation that can destroy canvas work. On 2026-08-27 it did: a delta entry `modified: Realtime canvas` was applied to a node labelled `Orders Service`, which kept its id, its position and both its edges while ceasing to record the thing it recorded. Nothing was deleted and the count said *1 node updated*, so no check in the repo noticed. The rule now: an `updateNode` survives only when the target's **current** label matches a `modified` entry in that change's delta, compared case-insensitively with whitespace collapsed. **The two failure directions are not symmetrical, and that asymmetry is what sets the looseness.** Too strict and the component is drawn as a new node — additive, visible, and mergeable by hand. Too loose and a node silently becomes a different thing, which nothing downstream can detect, because the next spec generated from that canvas describes the new label as though it had always been there. So the match is loosened exactly as far as differences that carry no meaning (case, stray whitespace) and no further: substring or token-overlap matching is the obvious next step and it reintroduces the original bug, since architecture labels share generic words — `Users Service` would license an update against `Orders Service`. A refused update is **reported to the person and counted apart from the destructive drops**: `dropped` should never be non-zero and reads as an alarm, while an update aimed at the wrong node is ordinary, and one number would hide the ordinary case inside the alarm.
 - **`removed` deltas are reported, never drawn.** There is no honest way to render "retired" in this palette — `red` means *something went wrong* and a planned removal did not, `neutral` is the default fill and says nothing — and inventing a third tone for one surface is a design decision with no mandate, the same call `40` made in refusing to colour-code delta kinds. Deleting the node instead is what this project's core value forbids: `41` exists because a record of what was built must survive being replaced, and a canvas node is that record in visual form. So removals travel to the UI as a list of component names and a person removes them with full context. Saying nothing is not an option — a canvas that silently keeps a retired component overstates the system.
 - **Progress rides on the shared `ai-status-feed`**, not the run's metadata — the same line the rest of the AI model draws by what the work mutates. A spec and a proposal are produced for the person who asked; a canvas change happens to everybody, so it follows the design agent's broadcast path and reuses its presence identity (`lib/design-agent/room.ts`, shared by both canvas-mutating tasks so they cannot appear as different participants).
 - **`ProjectChange.canvasPushedAt` is the one column this adds, and it is the deliberate opposite of `42`'s refusal.** Drift got no column because two existing numbers already implied it. A push implies nothing: the canvas is a CRDT document with no memory of which change produced which node, so nothing that already exists says a push happened. `39`'s rule decides both — *record a fact already true, not one that anticipates a relationship* — and a push is an event that happened.
@@ -186,6 +187,70 @@ Applying a change moves the build list; the canvas is what a spec is written fro
 - **A project with no spec is refused before a model call is spent** — 409, `40`'s discipline, re-checked inside the task because the last spec can be removed in between.
 - Progress rides on the **run's own metadata**, not `ai-status-feed`. A build list is "the one project resource with no second layer", so it follows the spec and proposal path rather than the design agent's broadcast path.
 - Its own `UNIT_MODEL`, never `SPEC_MODEL` or `CHANGE_MODEL` — the three are different difficulties and must be raisable independently.
+
+## Architecture Decisions
+
+**Nothing in this section is built.** It is the decided shape of the recommendation half, written down before implementation so the units that build it implement against a contract rather than reconstruct a conversation. The gap it closes is the first entry under `## Open Questions` in [`progress-tracker.md`](progress-tracker.md).
+
+Specwright elicits every input a stack decision needs and consumes none of them as one. The interview collects eleven bounded answers — `actors`, `scaleTier`, `growth`, `dataShapes`, `consistency`, `latency`, `integrations`, `availability`, `compliance`, `priority`, `budget` — and `composeBrief` flattens all of them into Markdown for a model that `lib/spec-agent/generate.ts` then forbids from deciding anything with them: *"An unanswered field is not licence to pick a default or invent a stack."* That instruction is **correct and stays**. A spec describes a system that was drawn; it is the wrong artifact to hold a decision, because a decision has alternatives, a reason, and a person who accepted it, and prose has nowhere to put any of the three.
+
+A **decision record** is therefore the fifth artifact type, after the brief, the spec, the proposal, and the build unit. It is the change-agent pattern (`generateObject`, validated, persisted, model output untrusted at the boundary) with the **brief** as input instead of the spec.
+
+### The catalog is fixed, and that is the point
+
+Decisions occupy a fixed set of **slots** — datastore, compute platform, auth, eventing, cache, object storage, observability, secrets, tenancy model, CI/CD — declared in code the way `BRIEF_QUESTIONS` is, not invented per run.
+
+A slot that exists only when the model thinks of it can never be reported as *missing*. The whole value of the artifact is that a project can be asked "what have you not decided yet?", and that question is unanswerable against a list the model authored. This is `40`'s rule about counting drops, one level up: **an absence that nothing enumerates is invisible.**
+
+### A recommendation cites the answer it came from
+
+Every record carries a `basis` — the specific brief answers it derives from — alongside the recommendation, the alternatives it was chosen over, and the trade-off accepted. "Postgres — `Data shapes: Relational`, `Consistency: Strong`" is reviewable; "Postgres" is an oracle.
+
+**A recommendation whose `basis` does not resolve against the project's actual brief answers is dropped, never stored**, and the drops are counted. Identical rule and identical reason to `40`'s handling of unit keys: a model that invents its own justification is a prompt problem, and it is invisible unless counted.
+
+### `not specified` produces a question, never a guess
+
+Where the brief left a field at its default, the recommender **asks**. A slot whose inputs are absent is recorded as blocked on input, naming which answers would unblock it — it is not filled with a plausible default.
+
+This is what the interview's `## Assumptions` section was always for. Today it is a disclosure list nothing reads; here it becomes the work queue that decides which questions get asked next. It is also why the recommender must not silently improve on a skipped answer: skipping is allowed everywhere in the interview precisely because nothing downstream pretends the answer was given.
+
+### `status` is human-owned — `38`'s contract, a fourth time
+
+A record's status is a person's — proposed, accepted, rejected. **No producer writes it**, including the one that created the record. The model proposes; a person decides. Same rule that governs a build unit's `status`, `verified`, and `sequence`, and the same reason: those columns are a team's own record of what they actually chose.
+
+**A superseded decision is kept, not overwritten**, and a rejected one is kept too — `40`'s stance on a discarded proposal ("a rejected idea is a decision worth keeping") and `41`'s on a superseded unit, reaching the artifact where they matter most. The reason a team ruled out DynamoDB is worth more six months later than the fact that they chose Postgres.
+
+### Security is derived, not a slot
+
+Security is not a peer of "datastore" — "encrypted at rest" is a **property of** the datastore decision. So the security posture is a derived obligation set, keyed off `compliance`, `actors`, `integrations`, and each accepted decision: data classification, encryption in transit and at rest, tenancy isolation, secret management, audit logging, retention, and the contractual artifacts a regime implies.
+
+Deriving it means it cannot go stale against the decisions, and it means answering `HIPAA` in the interview produces **obligations**, not a sentence in `## Technical Considerations`.
+
+### The seams this already has
+
+- **The spec stops transcribing and starts reading.** `## Tech Stack` is sourced from *accepted* decision records rather than from the brief's Constraints lines. The spec agent's "do not invent a stack" instruction is untouched and becomes true in a stronger way — by then the stack is not invented, it is recorded and accepted.
+- **An accepted decision implies work**, so it feeds build units through `38`'s producer contract a fifth time: match on `key`, add what does not exist, never write a human-owned column.
+- **Refused before a model call when the project has no brief.** A decision is grounded in a brief the way a change is a delta against a spec — `40`'s discipline, and the same 409.
+- **Its own `DECISION_MODEL`**, never `SPEC_MODEL`, `CHANGE_MODEL`, or `UNIT_MODEL`. Four difficulties, four constants, each raisable independently.
+- **Progress rides on the run's own metadata**, not `ai-status-feed`. A decision record mutates nothing shared, so it follows the spec, proposal, and unit path rather than the design agent's broadcast path.
+
+### The interview branches by rule, not by model
+
+Eight fixed questions cannot characterise a system. Choosing `PCI` should ask where cardholder data flows; `spiky` should ask the burst shape; `live` should ask the fan-out.
+
+Branching is a **predicate on a `BriefQuestion`, evaluated against answers already given** — pure, no model call. `lib/architecture-brief.ts` is already built for this: options are declared `as const` and every type derives from the array, so a conditional question is a field, not a rewrite.
+
+**`composeBrief` stays deterministic**, which is the property that makes the interview testable without a browser and is stated in that module's own contract. A model that generated *questions* would destroy it. The seam the module names for a model — producing better **answers**, from a pasted document or an existing repo — is unaffected and remains open.
+
+## Runtime Tracking
+
+**Nothing in this section is built, and none of it should begin before `## Architecture Decisions` exists.** Guidance during a deployment is only meaningful against a system that holds opinions; without decision records there is nothing to check reality against, and the result is a dashboard.
+
+Every storage model above this line is design-time. There is no environment, no deployed instance, and no signal from a running system anywhere in the schema. What it would require, stated so the size is not mistaken for a feature:
+
+- **An environment model** per project, and a link from a build unit to the real thing that implements it — a repo, a pull request, a service, a deploy.
+- **An inbound signal path.** Every AI path in Specwright today is outbound and request-triggered: a person clicks, a route access-checks, a task runs. A webhook arrives with **no authenticated user**, so `withProjectMember` does not apply and invariant 3 is not satisfied by reusing it. This is a new auth boundary, not a new route, and it is the single largest thing this half adds.
+- **Runtime drift** — `42`'s idea one level down. Spec drift compares a spec against applied changes; runtime drift compares the **decided** architecture against the **running** one: the decisions say Postgres and a queue, production has Postgres and no queue. Same shape, same refusal to store what two facts already imply, and the same rule that counting drift is not the same as being able to resolve it.
 
 ## Invariants
 

@@ -1,5 +1,12 @@
-import type { DesignOperationName, DesignPlan } from "@/lib/design-agent/plan";
-import type { ChangeDeltaEntry } from "@/types/changes";
+import type {
+  DesignOperation,
+  DesignOperationName,
+  DesignPlan,
+} from "@/lib/design-agent/plan";
+import type {
+  ChangeCanvasNodeUpdate,
+  ChangeDeltaEntry,
+} from "@/types/changes";
 
 /**
  * Turning an applied change's architecture delta into a canvas mutation —
@@ -148,12 +155,110 @@ const ALLOWED_OPERATIONS: readonly DesignOperationName[] = [
   "addEdge",
 ];
 
+/**
+ * The part of a canvas node this filter reads: which node it is, and what it is
+ * currently called.
+ *
+ * Structural rather than an import of `CanvasNode`, so this module keeps the
+ * property the rest of it has — nothing here depends on React Flow, Liveblocks,
+ * or anything with a runtime — and a check can hand-author one. `CanvasNode`
+ * satisfies it as it stands.
+ */
+export interface CanvasSyncNode {
+  id: string;
+  data: { label: string };
+}
+
+/**
+ * What the change named and what the canvas holds — everything the filter needs
+ * to tell a legitimate `updateNode` from a mis-aimed one.
+ *
+ * Required, not optional. A caller that forgets it would silently get the old
+ * unconstrained behaviour back, and this is the argument the whole module makes
+ * about prompts: a rule that can be skipped is not a rule.
+ */
+export interface CanvasSyncScope {
+  /** The canvas as it was read before the plan was generated. */
+  nodes: CanvasSyncNode[];
+  /**
+   * The change's architecture delta. Only its `modified` entries license an
+   * update: `added` says the canvas does not have that part yet, so a node
+   * already carrying that label is somebody else's, and relabelling it is the
+   * exact overwrite this rule exists to stop.
+   */
+  architectureDelta: ChangeDeltaEntry[];
+}
+
+/**
+ * Fold a label to the form the two sides are compared in: trimmed, lowercased,
+ * and with internal whitespace runs collapsed.
+ *
+ * **Why this much and no more.** A delta is written by a person (or a model
+ * reading one) and a node label is typed by a person, so `Realtime canvas` and
+ * `Realtime Canvas` are the same component and a rule strict enough to fail
+ * that ordinary case would be worse than the bug it fixes. Case and stray
+ * whitespace are the differences that carry no meaning.
+ *
+ * **Why not looser.** Substring or token-overlap matching is the obvious next
+ * step and it reintroduces exactly the failure this exists to prevent:
+ * architecture labels share generic words — `Service`, `DB`, `Queue`,
+ * `Gateway` — so `Users Service` would license an update against
+ * `Orders Service`. The two failure modes are not symmetrical. Too strict and
+ * the change is drawn as a **new node**: additive, visible, and something a
+ * person can merge by hand. Too loose and a node keeps its id, position, and
+ * edges while quietly becoming a different thing, which is the one loss nothing
+ * downstream can detect — the next spec generated from that canvas will
+ * describe the new label as though it had always been there.
+ */
+function normaliseLabel(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+/** The normalised labels a `modified` entry in this delta names. */
+function modifiedLabels(architectureDelta: ChangeDeltaEntry[]): Set<string> {
+  const labels = new Set<string>();
+  for (const entry of architectureDelta) {
+    if (entry?.kind !== "modified") continue;
+    if (typeof entry.component !== "string") continue;
+    const label = normaliseLabel(entry.component);
+    if (label.length > 0) labels.add(label);
+  }
+  return labels;
+}
+
+/** Current label by node id, for the nodes that have one. */
+function labelsById(nodes: CanvasSyncNode[]): Map<string, string> {
+  const labels = new Map<string, string>();
+  for (const node of nodes) {
+    if (typeof node?.id !== "string") continue;
+    const label = node.data?.label;
+    if (typeof label === "string") labels.set(node.id, label);
+  }
+  return labels;
+}
+
 /** A plan with its destructive operations removed, and what was removed. */
 export interface FilteredPlan {
   /** The plan as it will be applied — additive operations only. */
   plan: DesignPlan;
-  /** How many operations were dropped before anything was applied. */
+  /**
+   * How many **destructive** operations were dropped before anything was
+   * applied. Normally `0`; a non-zero value means the model asked to delete,
+   * move, or resize somebody's work.
+   *
+   * A refused `updateNode` is deliberately **not** counted here — see
+   * {@link FilteredPlan.refusedUpdates}.
+   */
   dropped: number;
+  /**
+   * Nodes an `updateNode` was refused against, named by the label they still
+   * carry. A node with no label to name (an id that is not on the canvas at
+   * all) falls back to the label the operation wanted to give it, and then to
+   * the id, so a refusal is never reported as an empty string.
+   */
+  refusedUpdates: string[];
+  /** The permitted updates, each carrying the label its node had before. */
+  updatedNodes: ChangeCanvasNodeUpdate[];
 }
 
 /**
@@ -171,6 +276,25 @@ export interface FilteredPlan {
  * sense, but they rearrange a shared document that people laid out by hand, and
  * nothing in an architecture delta justifies moving somebody else's diagram.
  *
+ * **`updateNode` survives only against a node the change actually names.** It
+ * is on the allow-list because redrawing a modified component is the point of a
+ * `modified` delta, but the operation overwrites a node's identity rather than
+ * adding to the diagram, and on 2026-08-27 it did: a delta entry
+ * `modified: Realtime canvas` was applied to a node labelled `Orders Service`,
+ * which kept its id, its position and both its edges while ceasing to be the
+ * thing it recorded. That is the same harm as a move and worse — a move is
+ * visible at a glance and trivially undone, an identity overwrite is neither.
+ * So the target's **current** label must match a `modified` entry in this
+ * change's delta ({@link normaliseLabel} states how loosely), and an update
+ * aimed anywhere else is refused. In the prompt, not in code, this would be a
+ * wish; the file already makes that argument about `deleteNode`.
+ *
+ * A refusal is counted apart from {@link FilteredPlan.dropped} because the two
+ * mean different things: `dropped` is the model asking to destroy or rearrange
+ * work and should never be non-zero, while a refused update is a legitimate
+ * operation aimed at the wrong target, which is ordinary. One number would hide
+ * the ordinary case inside the alarm.
+ *
  * This is **not** a second layer of the validation `applyDesignPlan` already
  * does. That function skips operations that are *invalid* — an edge to a
  * missing node, an update to an unknown id. These are operations that are
@@ -181,17 +305,55 @@ export interface FilteredPlan {
  * `applyDesignPlan` already fails on it with a clear message, and swallowing it
  * here would turn a malformed model response into a silent no-op.
  */
-export function filterAdditivePlan(plan: DesignPlan): FilteredPlan {
+export function filterAdditivePlan(
+  plan: DesignPlan,
+  scope: CanvasSyncScope,
+): FilteredPlan {
   if (!Array.isArray(plan?.operations)) {
-    return { plan, dropped: 0 };
+    return { plan, dropped: 0, refusedUpdates: [], updatedNodes: [] };
   }
 
-  const operations = plan.operations.filter((operation) =>
-    ALLOWED_OPERATIONS.includes(operation?.op),
-  );
+  const named = modifiedLabels(scope.architectureDelta);
+  const labels = labelsById(scope.nodes);
+
+  const operations: DesignOperation[] = [];
+  const refusedUpdates: string[] = [];
+  const updatedNodes: ChangeCanvasNodeUpdate[] = [];
+  let dropped = 0;
+
+  for (const operation of plan.operations) {
+    if (!ALLOWED_OPERATIONS.includes(operation?.op)) {
+      dropped += 1;
+      continue;
+    }
+
+    if (operation.op === "updateNode") {
+      // The label the node carries *now*, not the one the operation proposes —
+      // what is being protected is the identity already on the canvas.
+      const previousLabel = labels.get(operation.id);
+      const proposed =
+        typeof operation.label === "string" && operation.label.trim().length > 0
+          ? operation.label
+          : null;
+
+      if (previousLabel === undefined || !named.has(normaliseLabel(previousLabel))) {
+        refusedUpdates.push(previousLabel ?? proposed ?? operation.id);
+        continue;
+      }
+
+      // `label` is absent when the operation only restyles the node, and then
+      // nothing about its identity moves — report it as unchanged rather than
+      // as a rename to nothing.
+      updatedNodes.push({ previousLabel, label: proposed ?? previousLabel });
+    }
+
+    operations.push(operation);
+  }
 
   return {
     plan: { ...plan, operations },
-    dropped: plan.operations.length - operations.length,
+    dropped,
+    refusedUpdates,
+    updatedNodes,
   };
 }

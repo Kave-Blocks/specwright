@@ -3,12 +3,15 @@
  * against the real Postgres and the real Blob store.
  *
  * There is **no model call and no Liveblocks room anywhere in this script**, and
- * that is deliberate rather than a shortcut. The two things this unit must never
- * get wrong — that a destructive operation cannot reach the canvas, and that a
- * change cannot be drawn twice — are both decided before any room is touched:
- * one by a filter over a plan, the other by a rule over two columns. Feeding a
+ * that is deliberate rather than a shortcut. The three things this unit must
+ * never get wrong — that a destructive operation cannot reach the canvas, that
+ * an update cannot land on a node the change never named, and that a change
+ * cannot be drawn twice — are all decided before any room is touched: two by a
+ * filter over a plan, the third by a rule over two columns. Feeding a
  * hand-authored plan through the filter proves the guard holds *regardless of
- * what the model emits*, which hoping the model behaves never could.
+ * what the model emits*, which hoping the model behaves never could. The
+ * `update` phase then applies what survived to an **in-memory** flow (a `Map`,
+ * not a room — see `memoryFlow`) so it can read the labels back.
  *
  * What a passing run proves — unit 43's "Check When Done" list, at the layer
  * this script can reach:
@@ -17,6 +20,13 @@
  *   order preserved and the drop counted. An all-destructive plan applies
  *   nothing. A malformed plan is passed through untouched so `applyDesignPlan`
  *   still fails loudly on it rather than silently doing nothing.
+ * - `update`: the 2026-08-27 failure, reproduced — an `updateNode` against a
+ *   node the delta never names is dropped, reported by the label that node
+ *   still carries, counted apart from the destructive drops, and the node reads
+ *   `Orders Service` after the surviving plan is applied. An update against a
+ *   node the delta *does* name is permitted despite differing in case or
+ *   whitespace, lands, and reports the label the node had before — so the rule
+ *   cannot pass by refusing everything.
  * - `prompt`: added and modified components reach the prompt, removed ones do
  *   not, the additive intent is stated, and `skippedRemovals` names the removed
  *   components and only those.
@@ -49,6 +59,7 @@
  *
  * Usage (from the repo root):
  *   npm run verify:canvas -- filter
+ *   npm run verify:canvas -- update
  *   npm run verify:canvas -- prompt
  *   npm run verify:canvas -- guard
  *   npm run verify:canvas -- retry
@@ -60,14 +71,18 @@
  *   BLOB_READ_WRITE_TOKEN   required for the same three — the proposal JSON is
  *                           really uploaded
  *
- * `filter` and `prompt` are pure library checks and need neither.
+ * `filter`, `update`, and `prompt` are pure library checks and need neither.
  */
 
 import { config } from "dotenv";
 
 config({ path: [".env.local", ".env"] });
 
+import type { MutableFlow } from "@liveblocks/react-flow/node";
+
+import type { CanvasSyncNode, CanvasSyncScope } from "@/lib/canvas-sync/plan";
 import type { DesignPlan } from "@/lib/design-agent/plan";
+import type { CanvasEdge, CanvasNode } from "@/types/canvas";
 import type { ChangeDeltaEntry } from "@/types/changes";
 
 const PROJECT_PREFIX = "verify-canvas-push-";
@@ -115,6 +130,94 @@ type Deps = Awaited<ReturnType<typeof deps>>;
 /** The plan module has no runtime dependencies, so it loads on its own. */
 async function planDeps() {
   return import("@/lib/canvas-sync/plan");
+}
+
+/**
+ * `applyDesignPlan`, which reaches no network either — its only Liveblocks
+ * dependency is the `MutableFlow` *type*, so it will operate on the in-memory
+ * flow {@link memoryFlow} builds.
+ */
+async function applyDeps() {
+  return import("@/lib/design-agent/apply");
+}
+
+/**
+ * A `MutableFlow` that is a `Map`, not a room.
+ *
+ * The filter's contract is that a refused operation never reaches
+ * `applyDesignPlan`, and the thing that actually matters is one step further
+ * on: that the node's label is still there afterwards. Asserting the operation
+ * is absent from an array proves the first; running the filtered plan through
+ * the real apply path and reading the label back proves the second, which is
+ * what the live proof of 2026-08-27 found broken.
+ *
+ * Only the members `applyDesignPlan` calls are implemented — the cast is
+ * honest about the rest being absent, and any use of one would fail loudly here
+ * rather than quietly pass.
+ */
+function memoryFlow(seed: CanvasSyncNode[]) {
+  const nodes = new Map<string, CanvasNode>(
+    seed.map((node) => [
+      node.id,
+      {
+        id: node.id,
+        type: "canvasNode",
+        position: { x: 0, y: 0 },
+        data: {
+          label: node.data.label,
+          color: "#1F1F1F",
+          textColor: "#EDEDED",
+          shape: "rectangle",
+        },
+      } as CanvasNode,
+    ]),
+  );
+  const edges = new Map<string, CanvasEdge>();
+
+  const flow = {
+    get nodes() {
+      return [...nodes.values()];
+    },
+    get edges() {
+      return [...edges.values()];
+    },
+    getNode: (id: string) => nodes.get(id),
+    getEdge: (id: string) => edges.get(id),
+    addNode: (node: CanvasNode) => {
+      nodes.set(node.id, node);
+    },
+    updateNode: (
+      id: string,
+      partial: Partial<CanvasNode> | ((node: CanvasNode) => CanvasNode),
+    ) => {
+      const node = nodes.get(id);
+      if (!node) return;
+      nodes.set(
+        id,
+        typeof partial === "function" ? partial(node) : { ...node, ...partial },
+      );
+    },
+    updateNodeData: (id: string, partial: Partial<CanvasNode["data"]>) => {
+      const node = nodes.get(id);
+      if (!node) return;
+      nodes.set(id, { ...node, data: { ...node.data, ...partial } });
+    },
+    removeNode: (id: string) => {
+      nodes.delete(id);
+    },
+    addEdge: (edge: CanvasEdge) => {
+      edges.set(edge.id, edge);
+    },
+    removeEdge: (id: string) => {
+      edges.delete(id);
+    },
+  };
+
+  return {
+    flow: flow as unknown as MutableFlow<CanvasNode, CanvasEdge>,
+    labelOf: (id: string) => nodes.get(id)?.data.label ?? null,
+    nodeCount: () => nodes.size,
+  };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -237,7 +340,20 @@ async function filterPhase() {
     ],
   };
 
-  const { plan: filtered, dropped } = filterAdditivePlan(plan);
+  // The update above is a legitimate one — the delta names the node it targets —
+  // so this phase still measures the destructive filter and nothing else. The
+  // update-target rule has its own phase below.
+  const scope: CanvasSyncScope = {
+    nodes: [
+      { id: "api", data: { label: "API server" } },
+      { id: "api-gateway", data: { label: "API Gateway" } },
+    ],
+    architectureDelta: [
+      { kind: "modified", component: "API server", detail: "Renamed." },
+    ],
+  };
+
+  const { plan: filtered, dropped } = filterAdditivePlan(plan, scope);
   const kept = filtered.operations.map((operation) => operation.op);
 
   check(
@@ -282,7 +398,7 @@ async function filterPhase() {
       { op: "moveNode", id: "b", x: 0, y: 0 },
     ],
   };
-  const allDropped = filterAdditivePlan(destructive);
+  const allDropped = filterAdditivePlan(destructive, scope);
   check(
     "an all-destructive plan applies nothing",
     allDropped.plan.operations.length === 0 && allDropped.dropped === 3,
@@ -294,11 +410,341 @@ async function filterPhase() {
   // it with its own clear message instead of the filter turning it into a
   // silent no-op.
   const malformed = { summary: "Broken" } as unknown as DesignPlan;
-  const passthrough = filterAdditivePlan(malformed);
+  const passthrough = filterAdditivePlan(malformed, scope);
   check(
     "a malformed plan passes through untouched rather than becoming a no-op",
     passthrough.plan === malformed && passthrough.dropped === 0,
     String(passthrough.dropped),
+  );
+  check(
+    "and reports neither an update nor a refusal",
+    passthrough.refusedUpdates.length === 0 &&
+      passthrough.updatedNodes.length === 0,
+    `${passthrough.refusedUpdates.length}, ${passthrough.updatedNodes.length}`,
+  );
+}
+
+/**
+ * The Microservices starter template, which was the canvas baseline during the
+ * 2026-08-27 live proof. Nothing here is called "Realtime canvas" — that is the
+ * whole point of using it.
+ */
+const MICROSERVICES: CanvasSyncNode[] = [
+  { id: "ms-client", data: { label: "Client" } },
+  { id: "ms-gateway", data: { label: "API Gateway" } },
+  { id: "ms-auth", data: { label: "Auth Service" } },
+  { id: "ms-users", data: { label: "Users Service" } },
+  { id: "ms-orders", data: { label: "Orders Service" } },
+  { id: "ms-users-db", data: { label: "Users DB" } },
+  { id: "ms-orders-db", data: { label: "Orders DB" } },
+];
+
+async function updatePhase() {
+  console.log(
+    "\nupdate — an updateNode is permitted only against a node the delta names",
+  );
+  const { filterAdditivePlan } = await planDeps();
+  const { applyDesignPlan } = await applyDeps();
+
+  /* --- The failure this rule exists to stop, reproduced exactly. ---------- */
+
+  // Observed on 2026-08-27: the delta named "Realtime canvas", no such node
+  // existed, and the model aimed the update at `ms-orders` — relabelling
+  // "Orders Service" out of existence while leaving its id, position and both
+  // its edges intact, so nothing about the diagram looked wrong.
+  const observed: DesignPlan = {
+    summary: "Record the realtime canvas change",
+    operations: [
+      { op: "addNode", id: "sync-queue", label: "Sync Queue", shape: "cylinder" },
+      { op: "updateNode", id: "ms-orders", label: "Realtime Canvas" },
+      {
+        op: "addEdge",
+        id: "sync-queue->ms-orders",
+        source: "sync-queue",
+        target: "ms-orders",
+      },
+    ],
+  };
+  const observedScope: CanvasSyncScope = {
+    nodes: MICROSERVICES,
+    architectureDelta: [
+      { kind: "added", component: "Sync Queue", detail: "Buffers updates." },
+      {
+        kind: "modified",
+        component: "Realtime canvas",
+        detail: "Writes through the queue.",
+      },
+    ],
+  };
+
+  const refused = filterAdditivePlan(observed, observedScope);
+  const refusedOps = refused.plan.operations.map((operation) => operation.op);
+
+  check(
+    "an update against a node the delta never names is dropped",
+    !refusedOps.includes("updateNode"),
+    refusedOps.join(","),
+  );
+  // The assertion the live proof would have failed: apply what survived the
+  // filter to the baseline canvas and read the label back.
+  const canvas = memoryFlow(MICROSERVICES);
+  const summary = applyDesignPlan(canvas.flow, refused.plan);
+  check(
+    "so `Orders Service` is still labelled `Orders Service` afterwards",
+    canvas.labelOf("ms-orders") === "Orders Service",
+    canvas.labelOf("ms-orders") ?? "gone",
+  );
+  check(
+    "every baseline node survives, and the added one joins them",
+    canvas.nodeCount() === MICROSERVICES.length + 1,
+    String(canvas.nodeCount()),
+  );
+  check(
+    "and the apply path reports no update at all",
+    summary.nodesUpdated === 0 && summary.nodesAdded === 1,
+    `${summary.nodesAdded} added, ${summary.nodesUpdated} updated`,
+  );
+  check(
+    "the refusal names the node by the label it still carries",
+    refused.refusedUpdates.join(",") === "Orders Service",
+    refused.refusedUpdates.join(","),
+  );
+  check(
+    "the refusal is NOT counted as a destructive drop",
+    refused.dropped === 0,
+    String(refused.dropped),
+  );
+  check(
+    "no update is reported as having been made",
+    refused.updatedNodes.length === 0,
+    String(refused.updatedNodes.length),
+  );
+  check(
+    "and the rest of the plan is untouched, in order",
+    refusedOps.join(",") === "addNode,addEdge",
+    refusedOps.join(","),
+  );
+
+  /* --- The legitimate case, which must not be dropped with it. ------------ */
+
+  // A human-written delta will not match a node label exactly. A rule strict
+  // enough to fail on case is worse than the bug it fixes.
+  const legitimateScope: CanvasSyncScope = {
+    nodes: [
+      { id: "rt-canvas", data: { label: "Realtime Canvas" } },
+      { id: "ms-orders", data: { label: "Orders Service" } },
+    ],
+    architectureDelta: [
+      {
+        kind: "modified",
+        component: "Realtime canvas",
+        detail: "Writes through the queue.",
+      },
+    ],
+  };
+  const legitimate = filterAdditivePlan(
+    {
+      summary: "Update the canvas node",
+      operations: [
+        { op: "updateNode", id: "rt-canvas", label: "Realtime Canvas (queued)" },
+      ],
+    },
+    legitimateScope,
+  );
+
+  check(
+    "an update against a node the delta names is permitted, case and all",
+    legitimate.plan.operations.length === 1 &&
+      legitimate.plan.operations[0]?.op === "updateNode",
+    legitimate.plan.operations.map((operation) => operation.op).join(","),
+  );
+  check(
+    "and nothing is refused",
+    legitimate.refusedUpdates.length === 0,
+    legitimate.refusedUpdates.join(","),
+  );
+  check(
+    "the outcome carries the label the node had before",
+    legitimate.updatedNodes[0]?.previousLabel === "Realtime Canvas",
+    legitimate.updatedNodes[0]?.previousLabel ?? "none",
+  );
+  check(
+    "and the label it carries now",
+    legitimate.updatedNodes[0]?.label === "Realtime Canvas (queued)",
+    legitimate.updatedNodes[0]?.label ?? "none",
+  );
+
+  // The other half of the rule: it must not pass by dropping everything.
+  const legitimateCanvas = memoryFlow(legitimateScope.nodes);
+  applyDesignPlan(legitimateCanvas.flow, legitimate.plan);
+  check(
+    "the permitted update really lands on the node the delta named",
+    legitimateCanvas.labelOf("rt-canvas") === "Realtime Canvas (queued)",
+    legitimateCanvas.labelOf("rt-canvas") ?? "gone",
+  );
+  check(
+    "and no other node on that canvas moves",
+    legitimateCanvas.labelOf("ms-orders") === "Orders Service",
+    legitimateCanvas.labelOf("ms-orders") ?? "gone",
+  );
+
+  // Stray whitespace is the other difference that carries no meaning.
+  const spaced = filterAdditivePlan(
+    {
+      summary: "Update the canvas node",
+      operations: [{ op: "updateNode", id: "rt-canvas", label: "Canvas" }],
+    },
+    {
+      nodes: [{ id: "rt-canvas", data: { label: " Realtime   Canvas " } }],
+      architectureDelta: legitimateScope.architectureDelta,
+    },
+  );
+  check(
+    "leading, trailing and doubled whitespace do not defeat the match",
+    spaced.plan.operations.length === 1 && spaced.refusedUpdates.length === 0,
+    spaced.refusedUpdates.join(","),
+  );
+
+  // An update that only restyles a node renames nothing, and must not be
+  // reported as though it had.
+  const restyled = filterAdditivePlan(
+    {
+      summary: "Recolour the canvas node",
+      operations: [{ op: "updateNode", id: "rt-canvas", color: "blue" }],
+    },
+    legitimateScope,
+  );
+  check(
+    "a restyle keeps the node's label as both the previous and current one",
+    restyled.updatedNodes[0]?.previousLabel === "Realtime Canvas" &&
+      restyled.updatedNodes[0]?.label === "Realtime Canvas",
+    `${restyled.updatedNodes[0]?.previousLabel} / ${restyled.updatedNodes[0]?.label}`,
+  );
+
+  /* --- The edges of the rule. --------------------------------------------- */
+
+  // `added` says the canvas does not have that part yet. A node already
+  // carrying the name is somebody else's, so relabelling it is the same
+  // overwrite by another route.
+  const addedOnly = filterAdditivePlan(
+    {
+      summary: "Draw the sync queue",
+      operations: [{ op: "updateNode", id: "queue", label: "Sync Queue v2" }],
+    },
+    {
+      nodes: [{ id: "queue", data: { label: "Sync Queue" } }],
+      architectureDelta: [
+        { kind: "added", component: "Sync Queue", detail: "Buffers updates." },
+      ],
+    },
+  );
+  check(
+    "an `added` entry does not license an update against a node of that name",
+    addedOnly.plan.operations.length === 0 &&
+      addedOnly.refusedUpdates.join(",") === "Sync Queue",
+    addedOnly.refusedUpdates.join(","),
+  );
+
+  // Nor does a `removed` one — removals are reported and never drawn, and a
+  // relabel is not a removal.
+  const removedOnly = filterAdditivePlan(
+    {
+      summary: "Retire the socket writer",
+      operations: [{ op: "updateNode", id: "sock", label: "Retired" }],
+    },
+    {
+      nodes: [{ id: "sock", data: { label: "Direct socket writer" } }],
+      architectureDelta: [
+        {
+          kind: "removed",
+          component: "Direct socket writer",
+          detail: "Replaced.",
+        },
+      ],
+    },
+  );
+  check(
+    "a `removed` entry does not license an update either",
+    removedOnly.plan.operations.length === 0 &&
+      removedOnly.refusedUpdates.join(",") === "Direct socket writer",
+    removedOnly.refusedUpdates.join(","),
+  );
+
+  // An id that is not on the canvas has no label to report, so the refusal
+  // falls back to the name the operation wanted to give it rather than reading
+  // as an empty bullet.
+  const unknownId = filterAdditivePlan(
+    {
+      summary: "Update a node that is not there",
+      operations: [{ op: "updateNode", id: "ghost", label: "Realtime canvas" }],
+    },
+    legitimateScope,
+  );
+  check(
+    "an update against an id that is not on the canvas is refused",
+    unknownId.plan.operations.length === 0,
+    String(unknownId.plan.operations.length),
+  );
+  check(
+    "and is reported under the label it proposed, never as an empty name",
+    unknownId.refusedUpdates.join(",") === "Realtime canvas",
+    unknownId.refusedUpdates.join(","),
+  );
+
+  // The two kinds of drop are separate numbers because they mean different
+  // things: one is the model asking to destroy work, the other is a legitimate
+  // operation aimed at the wrong node.
+  const both = filterAdditivePlan(
+    {
+      summary: "One of each",
+      operations: [
+        { op: "deleteNode", id: "ms-orders" },
+        { op: "updateNode", id: "ms-orders", label: "Realtime Canvas" },
+        { op: "updateNode", id: "rt-canvas", label: "Realtime Canvas (queued)" },
+        { op: "addNode", id: "queue", label: "Sync Queue", shape: "cylinder" },
+      ],
+    },
+    legitimateScope,
+  );
+  check(
+    "a destructive drop and a refused update are counted apart",
+    both.dropped === 1 && both.refusedUpdates.length === 1,
+    `${both.dropped} dropped, ${both.refusedUpdates.length} refused`,
+  );
+  check(
+    "the permitted update survives alongside them",
+    both.plan.operations.map((operation) => operation.op).join(",") ===
+      "updateNode,addNode",
+    both.plan.operations.map((operation) => operation.op).join(","),
+  );
+  check(
+    "and only the permitted one is reported as updated",
+    both.updatedNodes.length === 1 &&
+      both.updatedNodes[0]?.previousLabel === "Realtime Canvas",
+    String(both.updatedNodes.length),
+  );
+
+  // A delta with no `modified` entry at all licenses no update whatsoever.
+  const noModified = filterAdditivePlan(
+    {
+      summary: "Additions only",
+      operations: [
+        { op: "updateNode", id: "rt-canvas", label: "Something else" },
+        { op: "addNode", id: "queue", label: "Sync Queue", shape: "cylinder" },
+      ],
+    },
+    {
+      nodes: legitimateScope.nodes,
+      architectureDelta: [
+        { kind: "added", component: "Sync Queue", detail: "Buffers updates." },
+      ],
+    },
+  );
+  check(
+    "a delta with no modified entry permits no update at all",
+    noModified.plan.operations.map((operation) => operation.op).join(",") ===
+      "addNode" && noModified.refusedUpdates.length === 1,
+    noModified.plan.operations.map((operation) => operation.op).join(","),
   );
 }
 
@@ -657,6 +1103,7 @@ async function main() {
 
   const run = {
     filter: filterPhase,
+    update: updatePhase,
     prompt: promptPhase,
     guard: guardPhase,
     retry: retryPhase,
